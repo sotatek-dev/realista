@@ -1,0 +1,18 @@
+{
+  "chainName": "TestNet",
+  "rpcEndpoints": [
+    "http://seed2.neo.org:10332",
+    "http://seed2.cityofzion.io:8080",
+    "http://seed4.cityofzion.io:8080"
+  ],
+  "averageBlockTime": 15000,
+  "requiredConfirmation": 3,
+  "tokens": [
+    {
+      "symbol": "ret",
+      "name": "Realista Token",
+      "decimal": 8,
+      "hash": "0x573479DfA0Aa71578cc49850340C88E95848D587"
+    }
+  ]
+}
