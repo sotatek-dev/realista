@@ -1,5 +1,5 @@
 from boa.interop.Neo.Blockchain import GetHeight
-from boa.interop.Neo.Runtime import CheckWitness
+from boa.interop.Neo.Runtime import CheckWitness, GetTime
 from boa.interop.Neo.Action import RegisterAction
 from boa.interop.Neo.Storage import Get, Put
 from boa.builtins import concat
@@ -28,8 +28,7 @@ def kyc_register(ctx, args):
 
             if len(address) == 20:
 
-                kyc_storage_key = concat(KYC_KEY, address)
-                Put(ctx, kyc_storage_key, True)
+                storage_put(ctx, address, True, STORAGE_PREFIX_KYC)
 
                 OnKYCRegister(address)
                 ok_count += 1
@@ -37,23 +36,17 @@ def kyc_register(ctx, args):
     return ok_count
 
 
-def kyc_status(ctx, args):
+def kyc_status(ctx, address):
     """
-    Gets the KYC Status of an address
+    Looks up the KYC status of an address
 
-    :param args:list a list of arguments
+    :param address:bytearray The address to lookup
+    :param storage:StorageAPI A StorageAPI object for storage interaction
     :return:
-        bool: Returns the kyc status of an address
+        bool: KYC Status of address
     """
 
-    if len(args) > 0:
-        addr = args[0]
-
-        kyc_storage_key = concat(KYC_KEY, addr)
-
-        return Get(ctx, kyc_storage_key)
-
-    return False
+    return storage_get(ctx, address, STORAGE_PREFIX_KYC)
 
 
 def perform_exchange(ctx):
@@ -65,143 +58,191 @@ def perform_exchange(ctx):
      """
 
     attachments = get_asset_attachments()  # [receiver, sender, neo, gas]
+    receiver_addr   = attachments[0]
+    sender_addr     = attachments[1]
+    sent_amount_neo = attachments[2]
+    sent_amount_gas = attachments[3]
 
     # this looks up whether the exchange can proceed
-    exchange_ok = can_exchange(ctx, attachments, False)
+    now = GetTime()
+    exchangeables = get_exchangeable(ctx, sender_addr, sent_amount_neo, now)
 
-    if not exchange_ok:
+    # calculate the amount of tokens the attached neo will earn
+    exchanged_tokens = exchangeables[0]
+    contributed_neos = exchangeables[1]
+
+    if exchanged_tokens == 0:
         # This should only happen in the case that there are a lot of TX on the final
         # block before the total amount is reached.  An amount of TX will get through
         # the verification phase because the total amount cannot be updated during that phase
         # because of this, there should be a process in place to manually refund tokens
-        if attachments[2] > 0:
-            OnRefund(attachments[1], attachments[2])
-        # if you want to exchange gas instead of neo, use this
-        # if attachments.gas_attached > 0:
-        #    OnRefund(attachments.sender_addr, attachments.gas_attached)
+        if sent_amount_neo > 0:
+            OnRefund(sender_addr, sent_amount_neo)
+
         return False
 
-    # lookup the current balance of the address
-    current_balance = Get(ctx, attachments[1])
-
-    # calculate the amount of tokens the attached neo will earn
-    exchanged_tokens = attachments[2] * TOKENS_PER_NEO / 100000000
-
-    # if you want to exchange gas instead of neo, use this
-    # exchanged_tokens += attachments[3] * TOKENS_PER_GAS / 100000000
-
-    # add it to the the exchanged tokens and persist in storage
-    new_total = exchanged_tokens + current_balance
-    Put(ctx, attachments[1], new_total)
+    # add tokens to the sender's balance
+    add_balance(ctx, sender_addr, exchanged_tokens)
 
     # update the in circulation amount
-    result = add_to_circulation(ctx, exchanged_tokens)
+    add_minted_tokens(ctx, exchanged_tokens, contributed_neos)
 
     # dispatch transfer event
-    OnTransfer(attachments[0], attachments[1], exchanged_tokens)
+    OnTransfer(receiver_addr, sender_addr, exchanged_tokens)
+
+    # add bonus token for the referrer
+    referrer_addr = get_referrer(ctx, sender_addr)
+    if not referrer_addr:
+        return True
+
+    referrer_bonus_tokens = 1000 * exchanged_tokens / AFFILIATE_RATE
+    add_affiliated_tokens(ctx, referrer_bonus_tokens)
+
+    add_balance(ctx, referrer_addr, referrer_bonus_tokens)
+
+    # dispatch transfer event
+    OnTransfer(receiver_addr, referrer_addr, referrer_bonus_tokens)
 
     return True
 
 
-def can_exchange(ctx, attachments, verify_only):
+def get_exchangeable(ctx, sender_addr, sent_amount_neo, sending_time):
     """
-    Determines if the contract invocation meets all requirements for the ICO exchange
-    of neo or gas into NEP5 Tokens.
-    Note: This method can be called via both the Verification portion of an SC or the Application portion
+    Calculate how many NEOs and tokens are exchangeable in this purchase
 
-    When called in the Verification portion of an SC, it can be used to reject TX that do not qualify
-    for exchange, thereby reducing the need for manual NEO or GAS refunds considerably
-
-    :param attachments:Attachments An attachments object with information about attached NEO/Gas assets
+    :param sender_addr:bytearray    The address of investor
+    :param sent_amount_neo:int      Amount of NEO investor is using to purchase tokens
+    :param sending_time:int         Timestamp of block that contains the sending action
     :return:
-        bool: Whether an invocation meets requirements for exchange
+        [int, int]: number of tokens investor will get and number NEOs will be consumed
     """
 
-    # if you are accepting gas, use this
-#        if attachments[3] == 0:
-#            print("no gas attached")
-#            return False
+    if sent_amount_neo == 0:
+        debug_log('<get_exchangeable> sending 0 NEO -> got no tokens')
+        return [0, 0]
 
-    # if youre accepting neo, use this
+    minted_tokens = get_minted_tokens(ctx)
+    requested_token_amount = 0
 
-    if attachments[2] == 0:
-        return False
-
-    # the following looks up whether an address has been
-    # registered with the contract for KYC regulations
-    # this is not required for operation of the contract
-
-#        status = get_kyc_status(attachments.sender_addr, storage)
-    if not get_kyc_status(ctx, attachments[1]):
-        return False
-
-    # caluclate the amount requested
-    amount_requested = attachments[2] * TOKENS_PER_NEO / 100000000
-
-    # this would work for accepting gas
-    # amount_requested = attachments.gas_attached * token.tokens_per_gas / 100000000
-
-    exchange_ok = calculate_can_exchange(ctx, amount_requested, attachments[1], verify_only)
-
-    return exchange_ok
-
-
-def get_kyc_status(ctx, address):
     """
-    Looks up the KYC status of an address
-
-    :param address:bytearray The address to lookup
-    :param storage:StorageAPI A StorageAPI object for storage interaction
-    :return:
-        bool: KYC Status of address
+    # WHITELIST SALE PHASE
     """
-    kyc_storage_key = concat(KYC_KEY, address)
+    WHITELIST_SALE_BEGIN = get_config(ctx, 'WHITELIST_SALE_BEGIN')
+    WHITELIST_SALE_END = get_config(ctx, 'WHITELIST_SALE_END')
+    PRESALE_BEGIN = get_config(ctx, 'PRESALE_BEGIN')
+    PRESALE_END = get_config(ctx, 'PRESALE_END')
+    CROWDSALE_BEGIN = get_config(ctx, 'CROWDSALE_BEGIN')
 
-    return Get(ctx, kyc_storage_key)
+    WHITELIST_SALE_RATE = get_config(ctx, 'WHITELIST_SALE_RATE')
+    WHITELIST_WHOLESALE_RATE = get_config(ctx, 'WHITELIST_WHOLESALE_RATE')
+    PRESALE_RATE = get_config(ctx, 'PRESALE_RATE')
+    CROWDSALE_WEEK1_RATE = get_config(ctx, 'CROWDSALE_WEEK1_RATE')
+    CROWDSALE_WEEK2_RATE = get_config(ctx, 'CROWDSALE_WEEK2_RATE')
+    CROWDSALE_WEEK3_RATE = get_config(ctx, 'CROWDSALE_WEEK3_RATE')
+    CROWDSALE_WEEK4_RATE = get_config(ctx, 'CROWDSALE_WEEK4_RATE')
 
+    if (WHITELIST_SALE_BEGIN <= sending_time) and (sending_time <= WHITELIST_SALE_END):
+        # KYC is required in whitelist sale
+        if not kyc_status(ctx, sender_addr):
+            debug_log('<get_exchangeable> in whitelist sale but not KYC yet -> got no tokens')
+            return [0, 0]
 
-def calculate_can_exchange(ctx, amount, address, verify_only):
+        # Investor purchases exceeds individual limitation
+        # In this case we don't let him to get more tokens
+        old_accumulation = storage_get(ctx, sender_addr, STORAGE_PREFIX_PURCHASED_WHITELIST)
+        new_accumulation = old_accumulation + sent_amount_neo
+
+        if new_accumulation > WHITELIST_PERSONAL_CAP:
+            debug_log('<get_exchangeable> in whitelist sale but personal cap is reached -> got no tokens')
+            return [0, 0]
+
+        avail_tokens_left = WHITELIST_MAX_CAP - minted_tokens
+
+        # If total invested NEO still doesn't exceed the wholesale threshold
+        # The exchange rate is normal bonus for presale phase
+        if new_accumulation <= WHITELIST_WHOLESALE_THRESHOLD:
+            requested_token_amount = WHITELIST_SALE_RATE * sent_amount_neo / DECIMAL_FACTOR
+            if requested_token_amount > avail_tokens_left:
+                debug_log('<get_exchangeable> in whitelist sale but not enough tokens left for you (1) -> got no tokens')
+                return [0, 0]
+
+            debug_log('<get_exchangeable> get tokens in whitelist sale (1)')
+            return [requested_token_amount, sent_amount_neo]
+
+        # Otherwise the threshold-exceeded NEO will get higher exchange rate
+        norm_rate_amount_neo = WHITELIST_WHOLESALE_THRESHOLD - old_accumulation
+        high_rate_amount_neo = new_accumulation - WHITELIST_WHOLESALE_THRESHOLD
+        requested_token_amount = (WHITELIST_WHOLESALE_RATE * high_rate_amount_neo + WHITELIST_SALE_RATE * norm_rate_amount_neo) / DECIMAL_FACTOR
+
+        # The number of left tokens is not enough for sale
+        if requested_token_amount > avail_tokens_left:
+            debug_log('<get_exchangeable> in whitelist sale but not enough tokens left for you (2) -> got no tokens')
+            return [0, 0]
+
+        debug_log('<get_exchangeable> get tokens in whitelist sale (2)')
+        return [requested_token_amount, sent_amount_neo]
+
     """
-    Perform custom token exchange calculations here.
-
-    :param amount:int Number of tokens to convert from asset to tokens
-    :param address:bytearray The address to mint the tokens to
-    :return:
-        bool: Whether or not an address can exchange a specified amount
+    # PRESALE PHASE
     """
-    height = GetHeight()
+    if (PRESALE_BEGIN <= sending_time) and (sending_time <= PRESALE_END):
+        old_accumulation = storage_get(ctx, sender_addr, STORAGE_PREFIX_PURCHASED_PRESALE)
+        new_accumulation = old_accumulation + sent_amount_neo
 
-    current_in_circulation = Get(ctx, TOKEN_CIRC_KEY)
+        # Investor purchases exceeds individual limitation
+        # In this case we don't let him to get more tokens
+        if new_accumulation > PRESALE_PERSONAL_CAP:
+            debug_log('<get_exchangeable> in presale but personal cap is reached -> got no tokens')
+            return [0, 0]
 
-    new_amount = current_in_circulation + amount
+        avail_tokens_left = WHITELIST_MAX_CAP + PRESALE_MAX_CAP - minted_tokens
+        requested_token_amount = PRESALE_RATE * sent_amount_neo / DECIMAL_FACTOR
 
-    if new_amount > TOKEN_TOTAL_SUPPLY:
-        return False
+        # The number of left tokens is not enough for sale
+        if requested_token_amount > avail_tokens_left:
+            debug_log('<get_exchangeable> in presale but not enough tokens left for you -> got no tokens')
+            return [0, 0]
 
-    if height < BLOCK_SALE_START:
-        return False
+        debug_log('<get_exchangeable> get tokens in presale')
+        return [requested_token_amount, sent_amount_neo]
 
-    # if we are in free round, any amount
-    if height > LIMITED_ROUND_END:
-        return True
+    """
+    # Crowdsale
+    """
+    if (CROWDSALE_BEGIN <= sending_time) and (sending_time <= CROWDSALE_BEGIN + WEEK_IN_SECONDS * 4):
+        old_accumulation = storage_get(ctx, sender_addr, STORAGE_PREFIX_PURCHASED_CROWDSALE)
+        new_accumulation = old_accumulation + sent_amount_neo
 
-    # check amount in limited round
-    if amount <= MAX_EXCHANGE_LIMITED_ROUND:
+        # Investor purchases exceeds individual limitation
+        # In this case we don't let him to get more tokens
+        if new_accumulation > CROWDSALE_PERSONAL_CAP:
+            debug_log('<get_exchangeable> in crowdsale but personal cap is reached -> got no tokens')
+            return [0, 0]
 
-        # check if they have already exchanged in the limited round
-        r1key = concat(address, LIMITED_ROUND_KEY)
-        has_exchanged = Get(ctx, r1key)
+        crowdsale_exchange_rate = 0
 
-        # if not, then save the exchange for limited round
-        if not has_exchanged:
-            # note that this method can be invoked during the Verification trigger, so we have the
-            # verify_only param to avoid the Storage.Put during the read-only Verification trigger.
-            # this works around a "method Neo.Storage.Put not found in ->" error in InteropService.py
-            # since Verification is read-only and thus uses a StateReader, not a StateMachine
-            if not verify_only:
-                Put(ctx, r1key, True)
-            return True
+        if (CROWDSALE_BEGIN <= sending_time) and (sending_time <= CROWDSALE_BEGIN + WEEK_IN_SECONDS):
+            crowdsale_exchange_rate = CROWDSALE_WEEK1_RATE
 
-        return False
+        if (CROWDSALE_BEGIN + WEEK_IN_SECONDS <= sending_time) and (sending_time <= CROWDSALE_BEGIN + WEEK_IN_SECONDS * 2):
+            crowdsale_exchange_rate = CROWDSALE_WEEK2_RATE
 
-    return False
+        if (CROWDSALE_BEGIN + WEEK_IN_SECONDS * 2 <= sending_time) and (sending_time <= CROWDSALE_BEGIN + WEEK_IN_SECONDS * 3):
+            crowdsale_exchange_rate = CROWDSALE_WEEK3_RATE
+
+        if (CROWDSALE_BEGIN + WEEK_IN_SECONDS * 3 <= sending_time) and (sending_time <= CROWDSALE_BEGIN + WEEK_IN_SECONDS * 4):
+            crowdsale_exchange_rate = CROWDSALE_WEEK4_RATE
+
+        avail_tokens_left = CROWDSALE_MAX_CAP + WHITELIST_MAX_CAP + PRESALE_MAX_CAP - minted_tokens
+        requested_token_amount = crowdsale_exchange_rate * sent_amount_neo / DECIMAL_FACTOR
+
+        # The number of left tokens is not enough for sale
+        if requested_token_amount > avail_tokens_left:
+            debug_log('<get_exchangeable> in crowdsale but not enough tokens left for you -> got no tokens')
+            return [0, 0]
+
+        debug_log('<get_exchangeable> get tokens in crowdsale')
+        return [requested_token_amount, sent_amount_neo]
+
+    debug_log('<get_exchangeable> not in any sale period -> got no tokens')
+    return [0]

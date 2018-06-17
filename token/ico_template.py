@@ -12,7 +12,7 @@ from nex.txio import get_asset_attachments
 from nex.token import *
 from nex.crowdsale import *
 from nex.nep5 import *
-from boa.interop.Neo.Runtime import GetTrigger, CheckWitness
+from boa.interop.Neo.Runtime import GetTrigger, CheckWitness, GetTime
 from boa.interop.Neo.TriggerType import Application, Verification
 from boa.interop.Neo.Storage import *
 
@@ -47,7 +47,11 @@ def Main(operation, args):
         # Otherwise, we need to lookup the assets and determine
         # If attachments of assets is ok
         attachments = get_asset_attachments()
-        return can_exchange(ctx, attachments, True)
+        sender_addr     = attachments[1]
+        sent_amount_neo = attachments[2]
+        now = GetTime()
+        exchangeables = get_exchangeable(ctx, sender_addr, sent_amount_neo, now)
+        return exchangeables[0] > 0
 
     elif trigger == Application():
 
@@ -66,17 +70,69 @@ def Main(operation, args):
         elif operation == 'mintTokens':
             return perform_exchange(ctx)
 
-        elif operation == 'crowdsale_register':
+        elif operation == 'kyc_register':
             return kyc_register(ctx, args)
 
-        elif operation == 'crowdsale_status':
-            return kyc_status(ctx, args)
-
-        elif operation == 'crowdsale_available':
-            return crowdsale_available_amount(ctx)
+        elif operation == 'kyc_status':
+            if len(args) > 0:
+                address = args[0]
+                return kyc_status(ctx, address)
+            return False
 
         elif operation == 'get_attachments':
             return get_asset_attachments()
+
+        elif operation == 'get_config':
+            if len(args) > 0:
+                config_name = args[0]
+                return get_config(ctx, config_name)
+
+        elif operation == 'set_config':
+            if not CheckWitness(TOKEN_OWNER):
+                debug_log('Must be owner to update config')
+                return False
+
+            if len(args) == 2:
+                config_name = args[0]
+                config_value = args[1]
+                return set_config(ctx, config_name, config_value)
+
+            return False
+
+        elif operation == 'get_referrer':
+            if len(args) > 0:
+                address = args[0]
+                return get_referrer(ctx, address)
+
+            debug_log('Invalid arguments')
+            return False
+
+        elif operation == 'set_referrer':
+            if not CheckWitness(TOKEN_OWNER):
+                debug_log('Must be owner to update referrer')
+                return False
+
+            return set_referrer(ctx, args)
+
+        elif operation == 'get_minted_tokens':
+            return get_minted_tokens(ctx)
+
+        elif operation == 'get_contributed_neo':
+            return get_contributed_neo(ctx)
+
+        elif operation == 'get_affiliated_tokens':
+            return get_affiliated_tokens(ctx)
+
+        elif operation == 'get_exchangeable_amount':
+            if len(args) == 3:
+                sender_addr = args[0]
+                sent_amount_neo = args[1]
+                sending_time = args[2]
+                exchangeables = get_exchangeable(ctx, sender_addr, sent_amount_neo, sending_time)
+                return exchangeables[0]
+
+            debug_log('Invalid arguments')
+            return 0
 
         return 'unknown operation'
 
@@ -91,13 +147,14 @@ def deploy():
         bool: Whether the operation was successful
     """
     if not CheckWitness(TOKEN_OWNER):
-        print("Must be owner to deploy")
+        debug_log('Must be owner to deploy')
         return False
 
     if not Get(ctx, 'initialized'):
         # do deploy logic
         Put(ctx, 'initialized', 1)
-        Put(ctx, TOKEN_OWNER, TOKEN_INITIAL_AMOUNT)
-        return add_to_circulation(ctx, TOKEN_INITIAL_AMOUNT)
+        set_balance(ctx, TOKEN_OWNER, TOKEN_INITIAL_AMOUNT)
+        add_to_circulation(ctx, TOKEN_INITIAL_AMOUNT)
+        return True
 
     return False
