@@ -15,7 +15,7 @@
     "chalk": "2.4.1",
     "dotenv": "5.0.1",
     "fs-extra": "6.0.1",
-    "sota-core": "2.2.7"
+    "sota-core": "2.2.8"
   },
   "devDependencies": {
     "knex": "0.14.6"
