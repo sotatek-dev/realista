@@ -30,10 +30,7 @@ TOKENS_PER_GAS = 20 * 100000000
 MAX_EXCHANGE_LIMITED_ROUND = 500 * 40 * 100000000
 
 # when to start the crowdsale
-BLOCK_SALE_START = 755000
-
-# when to end the initial limited round
-LIMITED_ROUND_END = 755000 + 10000
+BLOCK_SALE_START = 1504445211
 
 KYC_KEY = b'kyc_ok'
 

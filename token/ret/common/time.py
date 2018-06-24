@@ -1,7 +1,9 @@
-from boa.blockchain.vm.Neo.Blockchain import GetHeight,GetHeader
+from boa.interop.Neo.Blockchain import GetHeight, GetHeader
+from boa.interop.Neo.Header import GetTimestamp, GetHash, GetNextConsensus # All these references are needed
 
 
 def get_now():
     height = GetHeight()
     current_block = GetHeader(height)
-    return current_block.Timestamp
+    timestamp = current_block.Timestamp
+    return timestamp

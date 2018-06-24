@@ -5,6 +5,7 @@ from boa.interop.Neo.Storage import Get, Put
 from boa.builtins import concat
 from ret.token.rettoken import *
 from ret.common.txio import get_asset_attachments
+from ret.common.time import get_now
 
 # OnInvalidKYCAddress = RegisterAction('invalid_registration', 'address')
 OnKYCRegister = RegisterAction('kyc_registration', 'address')
@@ -169,7 +170,7 @@ def calculate_can_exchange(ctx, amount, address, verify_only):
     :return:
         bool: Whether or not an address can exchange a specified amount
     """
-    height = GetHeight()
+    now = get_now()
 
     current_in_circulation = Get(ctx, TOKEN_CIRC_KEY)
 
@@ -178,12 +179,8 @@ def calculate_can_exchange(ctx, amount, address, verify_only):
     if new_amount > TOKEN_TOTAL_SUPPLY:
         return False
 
-    if height < BLOCK_SALE_START:
+    if now < BLOCK_SALE_START:
         return False
-
-    # if we are in free round, any amount
-    if height > LIMITED_ROUND_END:
-        return True
 
     # check amount in limited round
     if amount <= MAX_EXCHANGE_LIMITED_ROUND:
