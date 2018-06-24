@@ -8,10 +8,10 @@ Email: tom@neonexchange.org
 Date: Dec 11 2017
 
 """
-from nex.txio import get_asset_attachments
-from nex.token import *
-from nex.crowdsale import *
-from nex.nep5 import *
+from ret.common.txio import get_asset_attachments
+from ret.token.rettoken import *
+from ret.token.crowdsale import *
+from ret.token.nep5 import *
 from boa.interop.Neo.Runtime import GetTrigger, CheckWitness
 from boa.interop.Neo.TriggerType import Application, Verification
 from boa.interop.Neo.Storage import *
