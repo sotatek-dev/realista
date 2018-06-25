@@ -26,7 +26,7 @@ def kyc_register(ctx, args):
 
             if len(address) == 20:
 
-                kyc_storage_key = concat(KYC_KEY, address)
+                kyc_storage_key = concat(STORAGE_KEY_KYC, address)
                 Put(ctx, kyc_storage_key, True)
 
                 OnKYCRegister(address)
@@ -47,7 +47,7 @@ def kyc_status(ctx, args):
     if len(args) > 0:
         addr = args[0]
 
-        kyc_storage_key = concat(KYC_KEY, addr)
+        kyc_storage_key = concat(STORAGE_KEY_KYC, addr)
 
         return Get(ctx, kyc_storage_key)
 
@@ -63,6 +63,6 @@ def get_kyc_status(ctx, address):
     :return:
         bool: KYC Status of address
     """
-    kyc_storage_key = concat(KYC_KEY, address)
+    kyc_storage_key = concat(STORAGE_KEY_KYC, address)
 
     return Get(ctx, kyc_storage_key)

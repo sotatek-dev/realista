@@ -51,7 +51,7 @@ def whitelist_perform_exchange(ctx):
         return False
 
     # lookup the current balance of the address
-    current_balance = Get(ctx, attachments[1])
+    current_balance = get_balance(ctx, attachments[1])
 
     whitelistsale_personal_key = concat(WHITELISTSALE_PERSONAL_KEY, attachments[1])
     whitelistsale_personal_balance = storage_get(ctx, attachments[1], WHITELISTSALE_PERSONAL_KEY)
@@ -65,7 +65,7 @@ def whitelist_perform_exchange(ctx):
 
     # add it to the the exchanged tokens and persist in storage
     new_total = exchanged_tokens + current_balance
-    Put(ctx, attachments[1], new_total)
+    set_balance(ctx, attachments[1], new_total)
 
     new_whitelistsale_personal_total = exchanged_tokens + whitelistsale_personal_balance
     Put(ctx, whitelistsale_personal_key, new_whitelistsale_personal_total)
@@ -135,6 +135,7 @@ def whitelist_calculate_can_exchange(ctx, amount, address, verify_only):
         bool: Whether or not an address can exchange a specified amount
     """
     now = get_now()
+    WHITELIST_SALE_OPEN = get_config(ctx, 'WHITELIST_SALE_OPEN')
 
     current_in_circulation = Get(ctx, TOKEN_CIRC_KEY)
     
@@ -146,7 +147,7 @@ def whitelist_calculate_can_exchange(ctx, amount, address, verify_only):
     new_personal_amount = personal_balance + amount
     new_round_amount = round_balance + amount
 
-    if now < WHITELISTSALE_OPEN:
+    if now < WHITELIST_SALE_OPEN:
         return False
 
     if new_amount > TOKEN_TOTAL_SUPPLY:

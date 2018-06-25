@@ -7,7 +7,7 @@ OnAffiliate = RegisterAction('affiliate', 'addr_from', 'addr_to', 'amount')
 
 AFFILIATE_MAX_CAP = 13625000 * 100000000 # 13.625M
 AFFILIATE_RATE = 25 # divide 1000 = 2.5%
-AFFILIATE_KEY = b'affiliate'
+AFFILIATE_KEY = b'in_affiliate'
 
 
 def do_affiliate(ctx, amount, sender, address):

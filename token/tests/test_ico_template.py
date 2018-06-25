@@ -10,6 +10,7 @@ from neo.Core.FunctionCode import FunctionCode
 from neocore.Fixed8 import Fixed8
 from ret.token.rettoken import *
 from ret.token.sale import *
+from ret.common.other import *
 
 import shutil
 import os
@@ -22,6 +23,8 @@ class TestContract(BoaFixtureTest):
 
     dispatched_events = []
     dispatched_logs = []
+
+    now_in_test = 1510235265
 
     @classmethod
     def tearDownClass(cls):
@@ -71,6 +74,10 @@ class TestContract(BoaFixtureTest):
         tx, results, total_ops, engine = TestBuild(out, ['totalSupply', '[]'], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 0)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_OPEN', self.now_in_test])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
 
         tx, results, total_ops, engine = TestBuild(out, ['nonexistentmethod', '[]'], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
