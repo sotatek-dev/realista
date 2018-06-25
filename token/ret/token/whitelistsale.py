@@ -15,7 +15,8 @@ OnRefund = RegisterAction('refund', 'addr_to', 'amount')
 
 WHITELISTSALE_OPEN = 1509431946
 WHITELISTSALE_CLOSE = 1509431946 + 86400 * 3
-WHITELISTSALE_ROUND_KEY = b'whitelistsale'
+WHITELISTSALE_ROUND_KEY = b'in_whitelistsale'
+WHITELISTSALE_PERSONAL_KEY = b'whitelistsale'
 WHITELISTSALE_MAX_CAP = 70000000 * 100000000 # 70M
 WHITELISTSALE_RATE = 4666 * 100000000
 WHITELISTSALE_UPPER_RATE = 5000 * 100000000
@@ -51,8 +52,9 @@ def whitelist_perform_exchange(ctx):
     # lookup the current balance of the address
     current_balance = Get(ctx, attachments[1])
 
-    whitelistsale_round_key = concat(WHITELISTSALE_ROUND_KEY, attachments[1])
-    whitelistsale_round_balance = Get(ctx, whitelistsale_round_key)
+    whitelistsale_personal_key = concat(WHITELISTSALE_PERSONAL_KEY, attachments[1])
+    whitelistsale_personal_balance = Get(ctx, whitelistsale_personal_key)
+    whitelistsale_round_balance = Get(ctx, WHITELISTSALE_ROUND_KEY)
 
     # calculate the amount of tokens the attached neo will earn
     exchanged_tokens = whitelist_get_amount_requested(ctx, attachments[1], attachments[2])
@@ -64,8 +66,10 @@ def whitelist_perform_exchange(ctx):
     new_total = exchanged_tokens + current_balance
     Put(ctx, attachments[1], new_total)
 
-    new_whitelistsale_total = exchanged_tokens + whitelistsale_round_balance
-    Put(ctx, whitelistsale_round_key, new_whitelistsale_total)
+    new_whitelistsale_personal_total = exchanged_tokens + whitelistsale_personal_balance
+    Put(ctx, whitelistsale_personal_key, new_whitelistsale_personal_total)
+    new_whitelistsale_round_total = exchanged_tokens + whitelistsale_round_balance
+    Put(ctx, WHITELISTSALE_ROUND_KEY, new_whitelistsale_round_total)
 
     # update the in circulation amount
     result = add_to_circulation(ctx, exchanged_tokens)
@@ -132,34 +136,38 @@ def whitelist_calculate_can_exchange(ctx, amount, address, verify_only):
 
     current_in_circulation = Get(ctx, TOKEN_CIRC_KEY)
     
-    round_key = concat(WHITELISTSALE_ROUND_KEY, address)
-    current_balance_in_round = Get(ctx, round_key)
+    personal_key = concat(WHITELISTSALE_PERSONAL_KEY, address)
+    personal_balance = Get(ctx, personal_key)
+    round_balance = Get(ctx, WHITELISTSALE_ROUND_KEY)
 
     new_amount = current_in_circulation + amount
-    new_round_amount = current_balance_in_round + amount
+    new_personal_amount = personal_balance + amount
+    new_round_amount = round_balance + amount
+
+    if now < WHITELISTSALE_OPEN:
+        return False
 
     if new_amount > TOKEN_TOTAL_SUPPLY:
+        return False
+
+    if new_personal_amount > WHITELISTSALE_PERSONAL_CAP:
         return False
 
     if new_round_amount > WHITELISTSALE_MAX_CAP:
         return False
 
-    if now < WHITELISTSALE_OPEN:
-        return False
-
-    # check amount in limited round
-    return amount <= WHITELISTSALE_PERSONAL_CAP
+    return True
 
 
 def whitelist_get_amount_requested(ctx, address, amount):
-    current_round_key = concat(WHITELISTSALE_ROUND_KEY, address)
-    current_round_balance = Get(ctx, current_round_key)
+    current_personal_key = concat(WHITELISTSALE_PERSONAL_KEY, address)
+    current_personal_balance = Get(ctx, current_personal_key)
     amount_requested = amount * WHITELISTSALE_RATE / 100000000
 
-    if current_round_balance >= WHITELISTSALE_THRESHOLD:
+    if current_personal_balance >= WHITELISTSALE_THRESHOLD:
         amount_requested = amount * WHITELISTSALE_UPPER_RATE / 100000000
     else: 
-        addition = current_round_balance + amount_requested - WHITELISTSALE_THRESHOLD
+        addition = current_personal_balance + amount_requested - WHITELISTSALE_THRESHOLD
         if addition > 0:
             new_addition = addition / WHITELISTSALE_RATE * WHITELISTSALE_UPPER_RATE
             amount_requested = amount_requested - addition + new_addition

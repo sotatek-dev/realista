@@ -20,8 +20,7 @@ def do_affiliate(ctx, amount, sender, address):
     amount = amount * AFFILIATE_RATE / 1000
 
     current_balance = Get(ctx, address)
-    current_affiliate_key = concat(AFFILIATE_KEY, address)
-    current_affiliate_balance = Get(ctx, current_affiliate_key)
+    current_affiliate_balance = Get(ctx, AFFILIATE_KEY)
 
     new_amount = amount + current_affiliate_balance
     new_balance = amount + current_balance
@@ -29,17 +28,11 @@ def do_affiliate(ctx, amount, sender, address):
     if new_amount > AFFILIATE_MAX_CAP:
         return False
 
-    Put(ctx, current_affiliate_key, new_amount)
+    Put(ctx, AFFILIATE_KEY, new_amount)
     Put(ctx, address, new_balance)
     OnAffiliate(sender, address, amount)
     return True
 
 
 def get_affiliate(ctx, address):
-    if len(address) != 20:
-        return False
-
-    current_affiliate_key = concat(AFFILIATE_KEY, address)
-    current_affiliate_balance = Get(ctx, current_affiliate_key)
-    
-    return current_affiliate_balance
+    return Get(ctx, AFFILIATE_KEY)

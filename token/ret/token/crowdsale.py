@@ -6,58 +6,24 @@ from boa.builtins import concat
 from ret.token.rettoken import *
 from ret.common.txio import get_asset_attachments
 from ret.common.time import get_now
+from ret.token.affiliate import *
 
-# OnInvalidKYCAddress = RegisterAction('invalid_registration', 'address')
-OnKYCRegister = RegisterAction('kyc_registration', 'address')
 OnTransfer = RegisterAction('transfer', 'addr_from', 'addr_to', 'amount')
 OnRefund = RegisterAction('refund', 'addr_to', 'amount')
 
-
-def kyc_register(ctx, args):
-    """
-
-    :param args:list a list of addresses to register
-    :param token:Token A token object with your ICO settings
-    :return:
-        int: The number of addresses to register for KYC
-    """
-    ok_count = 0
-
-    if CheckWitness(TOKEN_OWNER):
-
-        for address in args:
-
-            if len(address) == 20:
-
-                kyc_storage_key = concat(KYC_KEY, address)
-                Put(ctx, kyc_storage_key, True)
-
-                OnKYCRegister(address)
-                ok_count += 1
-
-    return ok_count
+CROWDSALE_OPEN = 1508288688
+CROWDSALE_CLOSE = 1508288688 + 86400 * 28
+CROWDSALE_ROUND_KEY = b'crowdsale'
+CROWDSALE_NEO_ROUND_KEY = b'crowdsale_neo'
+CROWDSALE_MAX_CAP = 480000000 * 100000000 # 480M
+CROWDSALE_WEEK1_RATE = 4000 * 100000000
+CROWDSALE_WEEK2_RATE = 3833 * 100000000
+CROWDSALE_WEEK3_RATE = 3666 * 100000000
+CROWDSALE_WEEK4_RATE = 3500 * 100000000
+CROWDSALE_PERSONAL_NEO_CAP = 500 * 100000000 # 500 NEO
 
 
-def kyc_status(ctx, args):
-    """
-    Gets the KYC Status of an address
-
-    :param args:list a list of arguments
-    :return:
-        bool: Returns the kyc status of an address
-    """
-
-    if len(args) > 0:
-        addr = args[0]
-
-        kyc_storage_key = concat(KYC_KEY, addr)
-
-        return Get(ctx, kyc_storage_key)
-
-    return False
-
-
-def perform_exchange(ctx):
+def crowdsale_perform_exchange(ctx, args):
     """
 
      :param token:Token The token object with NEP5/sale settings
@@ -68,7 +34,7 @@ def perform_exchange(ctx):
     attachments = get_asset_attachments()  # [receiver, sender, neo, gas]
 
     # this looks up whether the exchange can proceed
-    exchange_ok = can_exchange(ctx, attachments, False)
+    exchange_ok = crowdsale_can_exchange(ctx, attachments, False)
 
     if not exchange_ok:
         # This should only happen in the case that there are a lot of TX on the final
@@ -85,8 +51,13 @@ def perform_exchange(ctx):
     # lookup the current balance of the address
     current_balance = Get(ctx, attachments[1])
 
+    round_key = concat(CROWDSALE_ROUND_KEY, attachments[1])
+    round_neo_key = concat(CROWDSALE_NEO_ROUND_KEY, attachments[1])
+    round_balance = Get(ctx, round_key)
+    round_neo_balance = Get(ctx, round_neo_key)
+
     # calculate the amount of tokens the attached neo will earn
-    exchanged_tokens = attachments[2] * TOKENS_PER_NEO / 100000000
+    exchanged_tokens = crowdsale_get_amount_requested(ctx, attachments[1], attachments[2])
 
     # if you want to exchange gas instead of neo, use this
     # exchanged_tokens += attachments[3] * TOKENS_PER_GAS / 100000000
@@ -95,16 +66,26 @@ def perform_exchange(ctx):
     new_total = exchanged_tokens + current_balance
     Put(ctx, attachments[1], new_total)
 
+    new_round_total = exchanged_tokens + round_balance
+    Put(ctx, round_key, new_round_total)
+
+    new_neo_round_total = attachments[2] + round_neo_balance # NEO
+    Put(ctx, round_neo_key, new_neo_round_total)
+
     # update the in circulation amount
     result = add_to_circulation(ctx, exchanged_tokens)
 
     # dispatch transfer event
     OnTransfer(attachments[0], attachments[1], exchanged_tokens)
 
+    if len(args) > 0:
+        address = args[0]
+        do_affiliate(ctx, exchanged_tokens, attachments[1], address)
+
     return True
 
 
-def can_exchange(ctx, attachments, verify_only):
+def crowdsale_can_exchange(ctx, attachments, verify_only):
     """
     Determines if the contract invocation meets all requirements for the ICO exchange
     of neo or gas into NEP5 Tokens.
@@ -128,40 +109,18 @@ def can_exchange(ctx, attachments, verify_only):
     if attachments[2] == 0:
         return False
 
-    # the following looks up whether an address has been
-    # registered with the contract for KYC regulations
-    # this is not required for operation of the contract
-
-#        status = get_kyc_status(attachments.sender_addr, storage)
-    if not get_kyc_status(ctx, attachments[1]):
-        return False
-
     # caluclate the amount requested
-    amount_requested = attachments[2] * TOKENS_PER_NEO / 100000000
+    amount_requested = crowdsale_get_amount_requested(ctx, attachments[1], attachments[2])
 
     # this would work for accepting gas
     # amount_requested = attachments.gas_attached * token.tokens_per_gas / 100000000
 
-    exchange_ok = calculate_can_exchange(ctx, amount_requested, attachments[1], verify_only)
+    exchange_ok = crowdsale_calculate_can_exchange(ctx, attachments[2], amount_requested, attachments[1], verify_only)
 
     return exchange_ok
 
 
-def get_kyc_status(ctx, address):
-    """
-    Looks up the KYC status of an address
-
-    :param address:bytearray The address to lookup
-    :param storage:StorageAPI A StorageAPI object for storage interaction
-    :return:
-        bool: KYC Status of address
-    """
-    kyc_storage_key = concat(KYC_KEY, address)
-
-    return Get(ctx, kyc_storage_key)
-
-
-def calculate_can_exchange(ctx, amount, address, verify_only):
+def crowdsale_calculate_can_exchange(ctx, neo_amount, amount, address, verify_only):
     """
     Perform custom token exchange calculations here.
 
@@ -173,32 +132,33 @@ def calculate_can_exchange(ctx, amount, address, verify_only):
     now = get_now()
 
     current_in_circulation = Get(ctx, TOKEN_CIRC_KEY)
+    
+    round_key = concat(CROWDSALE_ROUND_KEY, address)
+    current_balance_in_round = Get(ctx, round_key)
+
+    round_neo_key = concat(CROWDSALE_NEO_ROUND_KEY, address)
+    current_neo_balance_in_round = Get(ctx, round_neo_key)
 
     new_amount = current_in_circulation + amount
+    new_round_amount = current_balance_in_round + amount
+    new_neo_round_amount = current_neo_balance_in_round + neo_amount
 
     if new_amount > TOKEN_TOTAL_SUPPLY:
         return False
 
-    if now < BLOCK_SALE_START:
+    if new_round_amount > CROWDSALE_MAX_CAP:
         return False
 
-    # check amount in limited round
-    if amount <= MAX_EXCHANGE_LIMITED_ROUND:
-
-        # check if they have already exchanged in the limited round
-        r1key = concat(address, LIMITED_ROUND_KEY)
-        has_exchanged = Get(ctx, r1key)
-
-        # if not, then save the exchange for limited round
-        if not has_exchanged:
-            # note that this method can be invoked during the Verification trigger, so we have the
-            # verify_only param to avoid the Storage.Put during the read-only Verification trigger.
-            # this works around a "method Neo.Storage.Put not found in ->" error in InteropService.py
-            # since Verification is read-only and thus uses a StateReader, not a StateMachine
-            if not verify_only:
-                Put(ctx, r1key, True)
-            return True
-
+    if new_neo_round_amount > CROWDSALE_PERSONAL_NEO_CAP:
         return False
 
-    return False
+    if now < CROWDSALE_OPEN:
+        return False
+
+    return True
+
+
+def crowdsale_get_amount_requested(ctx, address, amount):
+    amount_requested = amount * CROWDSALE_WEEK1_RATE / 100000000
+
+    return amount_requested

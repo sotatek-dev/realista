@@ -6,7 +6,7 @@ from boa.builtins import concat
 from ret.token.rettoken import *
 from ret.common.txio import get_asset_attachments
 from ret.common.time import get_now
-from ret.token.kyc import *
+from ret.token.kyc import get_kyc_status
 from ret.token.affiliate import *
 
 OnTransfer = RegisterAction('transfer', 'addr_from', 'addr_to', 'amount')
@@ -14,7 +14,8 @@ OnRefund = RegisterAction('refund', 'addr_to', 'amount')
 
 PRESALE_OPEN = 1508288688
 PRESALE_CLOSE = 1508288688 + 86400 * 3
-PRESALE_ROUND_KEY = b'presale'
+PRESALE_ROUND_KEY = b'in_presale'
+PRESALE_PERSONAL_KEY = b'presale'
 PRESALE_MAX_CAP = 65000000 * 100000000 # 65M
 PRESALE_RATE = 4333 * 100000000
 PRESALE_PERSONAL_CAP = 250 * 4333 * 100000000
@@ -48,8 +49,9 @@ def presale_perform_exchange(ctx, args):
     # lookup the current balance of the address
     current_balance = Get(ctx, attachments[1])
 
-    round_key = concat(PRESALE_ROUND_KEY, attachments[1])
-    round_balance = Get(ctx, round_key)
+    personal_key = concat(PRESALE_PERSONAL_KEY, attachments[1])
+    personal_balance = Get(ctx, personal_key)
+    round_balance = Get(ctx, PRESALE_ROUND_KEY)
 
     # calculate the amount of tokens the attached neo will earn
     exchanged_tokens = presale_get_amount_requested(ctx, attachments[1], attachments[2])
@@ -61,8 +63,10 @@ def presale_perform_exchange(ctx, args):
     new_total = exchanged_tokens + current_balance
     Put(ctx, attachments[1], new_total)
 
+    new_personal_total = exchanged_tokens + personal_balance
     new_round_total = exchanged_tokens + round_balance
-    Put(ctx, round_key, new_round_total)
+    Put(ctx, personal_key, new_personal_total)
+    Put(ctx, PRESALE_ROUND_KEY, new_round_total)
 
     # update the in circulation amount
     result = add_to_circulation(ctx, exchanged_tokens)
@@ -133,11 +137,16 @@ def presale_calculate_can_exchange(ctx, amount, address, verify_only):
 
     current_in_circulation = Get(ctx, TOKEN_CIRC_KEY)
     
-    round_key = concat(PRESALE_ROUND_KEY, address)
-    current_balance_in_round = Get(ctx, round_key)
+    personal_key = concat(PRESALE_PERSONAL_KEY, address)
+    personal_balance = Get(ctx, personal_key)
+    round_balance = Get(ctx, PRESALE_ROUND_KEY)
 
     new_amount = current_in_circulation + amount
-    new_round_amount = current_balance_in_round + amount
+    new_personal_amount = personal_balance + amount
+    new_round_amount = round_balance + amount
+
+    if now < PRESALE_OPEN:
+        return False
 
     if new_amount > TOKEN_TOTAL_SUPPLY:
         return False
@@ -145,11 +154,10 @@ def presale_calculate_can_exchange(ctx, amount, address, verify_only):
     if new_round_amount > PRESALE_MAX_CAP:
         return False
 
-    if now < PRESALE_OPEN:
+    if new_personal_amount > PRESALE_PERSONAL_CAP:
         return False
 
-    # check amount in limited round
-    return amount <= PRESALE_PERSONAL_CAP
+    return True
 
 
 def presale_get_amount_requested(ctx, address, amount):
