@@ -1,10 +1,7 @@
-from boa.interop.Neo.Blockchain import GetHeight
 from boa.interop.Neo.Runtime import CheckWitness
 from boa.interop.Neo.Action import RegisterAction
 from boa.interop.Neo.Storage import Get, Put
 from boa.builtins import concat
-from ret.common.txio import get_asset_attachments
-from ret.common.time import get_now
 from ret.token.rettoken import *
 
 # OnInvalidKYCAddress = RegisterAction('invalid_registration', 'address')

@@ -64,8 +64,9 @@ def presale_perform_exchange(ctx, args):
     Put(ctx, attachments[1], new_total)
 
     new_personal_total = exchanged_tokens + personal_balance
-    new_round_total = exchanged_tokens + round_balance
     Put(ctx, personal_key, new_personal_total)
+
+    new_round_total = exchanged_tokens + round_balance
     Put(ctx, PRESALE_ROUND_KEY, new_round_total)
 
     # update the in circulation amount

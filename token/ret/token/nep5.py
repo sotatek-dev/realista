@@ -4,6 +4,7 @@ from boa.interop.Neo.Storage import *
 from boa.builtins import concat
 
 from ret.token.rettoken import *
+from ret.common.other import *
 
 
 OnTransfer = RegisterAction('transfer', 'addr_from', 'addr_to', 'amount')
@@ -58,13 +59,13 @@ def do_transfer(ctx, t_from, t_to, amount):
     if CheckWitness(t_from):
 
         if t_from == t_to:
-            print("transfer to self!")
+            log = debug_log("transfer to self!")
             return True
 
         from_val = Get(ctx, t_from)
 
         if from_val < amount:
-            print("insufficient funds")
+            log = debug_log("insufficient funds")
             return False
 
         if from_val == amount:
@@ -84,7 +85,7 @@ def do_transfer(ctx, t_from, t_to, amount):
 
         return True
     else:
-        print("from address is not the tx sender")
+        log = debug_log("from address is not the tx sender")
 
     return False
 
@@ -102,13 +103,13 @@ def do_transfer_from(ctx, t_from, t_to, amount):
     available_to_to_addr = Get(ctx, available_key)
 
     if available_to_to_addr < amount:
-        print("Insufficient funds approved")
+        log = debug_log("Insufficient funds approved")
         return False
 
     from_balance = Get(ctx, t_from)
 
     if from_balance < amount:
-        print("Insufficient tokens in from balance")
+        log = debug_log("Insufficient tokens in from balance")
         return False
 
     to_balance = Get(ctx, t_to)
@@ -120,15 +121,15 @@ def do_transfer_from(ctx, t_from, t_to, amount):
     Put(ctx, t_to, new_to_balance)
     Put(ctx, t_from, new_from_balance)
 
-    print("transfer complete")
+    log = debug_log("transfer complete")
 
     new_allowance = available_to_to_addr - amount
 
     if new_allowance == 0:
-        print("removing all balance")
+        log = debug_log("removing all balance")
         Delete(ctx, available_key)
     else:
-        print("updating allowance to new allowance")
+        log = debug_log("updating allowance to new allowance")
         Put(ctx, available_key, new_allowance)
 
     OnTransfer(t_from, t_to, amount)

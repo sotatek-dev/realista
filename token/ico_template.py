@@ -13,6 +13,7 @@ from ret.token.rettoken import *
 from ret.token.sale import *
 from ret.token.kyc import *
 from ret.token.nep5 import *
+from ret.common.other import *
 from boa.interop.Neo.Runtime import GetTrigger, CheckWitness
 from boa.interop.Neo.TriggerType import Application, Verification
 from boa.interop.Neo.Storage import *
@@ -92,7 +93,7 @@ def deploy():
         bool: Whether the operation was successful
     """
     if not CheckWitness(TOKEN_OWNER):
-        print("Must be owner to deploy")
+        log = debug_log("Must be owner to deploy")
         return False
 
     if not Get(ctx, 'initialized'):

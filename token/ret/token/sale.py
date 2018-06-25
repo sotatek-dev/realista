@@ -1,5 +1,6 @@
 from ret.token.whitelistsale import *
 from ret.token.presale import *
+from ret.token.crowdsale import *
 from ret.token.kyc import *
 
 
@@ -11,8 +12,9 @@ def perform_exchange(ctx, args):
          bool: Whether the exchange was successful
      """
 
-    # return whitelist_perform_exchange(ctx)
-    return presale_perform_exchange(ctx, args)
+    return whitelist_perform_exchange(ctx)
+    # return presale_perform_exchange(ctx, args)
+    # return crowdsale_perform_exchange(ctx, args)
 
 
 def can_exchange(ctx, attachments, verify_only):
@@ -29,5 +31,6 @@ def can_exchange(ctx, attachments, verify_only):
         bool: Whether an invocation meets requirements for exchange
     """
 
-    # return whitelist_can_exchange(ctx, attachments, verify_only)
-    return presale_can_exchange(ctx, attachments, verify_only)
+    return whitelist_can_exchange(ctx, attachments, verify_only)
+    # return presale_can_exchange(ctx, attachments, verify_only)
+    # return crowdsale_can_exchange(ctx, attachments, verify_only)

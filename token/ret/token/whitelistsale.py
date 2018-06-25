@@ -6,6 +6,7 @@ from boa.builtins import concat
 from ret.token.rettoken import *
 from ret.common.txio import get_asset_attachments
 from ret.common.time import get_now
+from ret.common.other import *
 from ret.token.kyc import get_kyc_status
 
 # OnInvalidKYCAddress = RegisterAction('invalid_registration', 'address')
@@ -53,7 +54,7 @@ def whitelist_perform_exchange(ctx):
     current_balance = Get(ctx, attachments[1])
 
     whitelistsale_personal_key = concat(WHITELISTSALE_PERSONAL_KEY, attachments[1])
-    whitelistsale_personal_balance = Get(ctx, whitelistsale_personal_key)
+    whitelistsale_personal_balance = storage_get(ctx, attachments[1], WHITELISTSALE_PERSONAL_KEY)
     whitelistsale_round_balance = Get(ctx, WHITELISTSALE_ROUND_KEY)
 
     # calculate the amount of tokens the attached neo will earn
@@ -68,6 +69,7 @@ def whitelist_perform_exchange(ctx):
 
     new_whitelistsale_personal_total = exchanged_tokens + whitelistsale_personal_balance
     Put(ctx, whitelistsale_personal_key, new_whitelistsale_personal_total)
+    
     new_whitelistsale_round_total = exchanged_tokens + whitelistsale_round_balance
     Put(ctx, WHITELISTSALE_ROUND_KEY, new_whitelistsale_round_total)
 
