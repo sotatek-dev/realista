@@ -9,6 +9,7 @@ from neo.Prompt.Utils import parse_param
 from neo.Core.FunctionCode import FunctionCode
 from neocore.Fixed8 import Fixed8
 from ret.token.rettoken import *
+from ret.token.sale import *
 
 import shutil
 import os
@@ -257,23 +258,18 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(len(TestContract.dispatched_events), 1)
         evt = TestContract.dispatched_events[0]
         self.assertIsInstance(evt, NotifyEvent)
-        self.assertEqual(evt.amount, 10 * TOKENS_PER_NEO)
+        self.assertEqual(evt.amount, 10 * PRESALE_RATE)
         self.assertEqual(evt.addr_to, self.wallet_3_script_hash)
-
-        # test mint tokens again, this should be false since you can't do it twice
-        tx, results, total_ops, engine = TestBuild(out, ['mintTokens', '[]', '--attach-neo=10'], self.GetWallet3(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), False)
 
         # now the minter should have a balance
         tx, results, total_ops, engine = TestBuild(out, ['balanceOf', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), 10 * TOKENS_PER_NEO)
+        self.assertEqual(results[0].GetBigInteger(), 10 * PRESALE_RATE)
 
         # now the total circulation should be bigger
         tx, results, total_ops, engine = TestBuild(out, ['totalSupply', '[]'], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), (10 * TOKENS_PER_NEO) + TOKEN_INITIAL_AMOUNT)
+        self.assertEqual(results[0].GetBigInteger(), (10 * PRESALE_RATE) + TOKEN_INITIAL_AMOUNT)
 
     def test_ICOTemplate_6_approval(self):
 

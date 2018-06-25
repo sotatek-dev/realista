@@ -10,7 +10,8 @@ Date: Dec 11 2017
 """
 from ret.common.txio import get_asset_attachments
 from ret.token.rettoken import *
-from ret.token.crowdsale import *
+from ret.token.sale import *
+from ret.token.kyc import *
 from ret.token.nep5 import *
 from boa.interop.Neo.Runtime import GetTrigger, CheckWitness
 from boa.interop.Neo.TriggerType import Application, Verification
@@ -64,7 +65,7 @@ def Main(operation, args):
         # the following are handled by crowdsale
 
         elif operation == 'mintTokens':
-            return perform_exchange(ctx)
+            return perform_exchange(ctx, args)
 
         elif operation == 'crowdsale_register':
             return kyc_register(ctx, args)
