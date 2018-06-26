@@ -37,8 +37,10 @@ def perform_exchange(ctx):
 
     exchangeables = get_exchangeable(ctx, attachments[1], attachments[2], now)
     exchanged_tokens = exchangeables[0]
+    state = exchangeables[2]
+    exchange_ok = exchanged_tokens > 0
 
-    if exchanged_tokens == 0:
+    if not exchange_ok:
         # This should only happen in the case that there are a lot of TX on the final
         # block before the total amount is reached.  An amount of TX will get through
         # the verification phase because the total amount cannot be updated during that phase
@@ -60,8 +62,8 @@ def perform_exchange(ctx):
     if state == IS_CROWDSALE:
         sale_prefix = STORAGE_PREFIX_PURCHASED_CROWDSALE
 
-    mint_log = add_minted_tokens(ctx, sale_prefix, exchanged_tokens)
-    neo_log = add_contributed_neo(ctx, sale_prefix, attachments[1], attachments[2])
+    add_minted_tokens(ctx, sale_prefix, exchanged_tokens)
+    add_contributed_neo(ctx, sale_prefix, attachments[1], attachments[2])
 
     # update the in circulation amount
     result = add_to_circulation(ctx, exchanged_tokens)
@@ -78,52 +80,50 @@ def get_exchangeable(ctx, sender_addr, sent_amount_neo, sending_time):
     state = get_state(ctx, sending_time)
 
     if sent_amount_neo == 0 or state == IS_NOT_SALE:
-        return [0, 0]
+        return [0, 0, state]
 
     if (state == IS_WHITELIST_SALE or state == IS_PRESALE) and not get_kyc_status(ctx, sender_addr):
-        return [0, 0]
+        return [0, 0, state]
 
     exchanged_tokens = get_amount_requested(ctx, sender_addr, sent_amount_neo, state, sending_time)
     if exchanged_tokens == 0:
-        return [0, 0]
+        return [0, 0, state]
+
+    current_tokens = get_balance(ctx, sender_addr)
+    if current_tokens + exchanged_tokens > TOKEN_TOTAL_SUPPLY:
+        return [0, 0, state]
 
     '''
         Check CAP
     '''
     if state == IS_WHITELIST_SALE:
-        current_tokens = get_balance(ctx, sender_addr)
         current_round_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_WHITELIST)
         current_round_neo = get_contributed_neo(ctx, sender_addr, STORAGE_PREFIX_PURCHASED_WHITELIST)
 
-        if current_tokens + exchanged_tokens > TOKEN_TOTAL_SUPPLY or \
-            current_round_tokens + exchanged_tokens > WHITELIST_SALE_MAX_CAP or \
+        if current_round_tokens + exchanged_tokens > WHITELIST_SALE_MAX_CAP or \
             current_round_neo + sent_amount_neo > WHITELIST_SALE_PERSONAL_CAP:
             
-            return [0, 0]
+            return [0, 0, state]
     
     if state == IS_PRESALE:
-        current_tokens = get_balance(ctx, sender_addr)
         current_round_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_PRESALE)
         current_round_neo = get_contributed_neo(ctx, sender_addr, STORAGE_PREFIX_PURCHASED_PRESALE)
 
-        if current_tokens + exchanged_tokens > TOKEN_TOTAL_SUPPLY or \
-            current_round_tokens + exchanged_tokens > PRESALE_MAX_CAP or \
+        if current_round_tokens + exchanged_tokens > PRESALE_MAX_CAP or \
             current_round_neo + sent_amount_neo > PRESALE_PERSONAL_CAP:
             
-            return [0, 0]
+            return [0, 0, state]
         
     if state == IS_CROWDSALE:
-        current_tokens = get_balance(ctx, sender_addr)
         current_round_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_CROWDSALE)
         current_round_neo = get_contributed_neo(ctx, sender_addr, STORAGE_PREFIX_PURCHASED_CROWDSALE)
 
-        if current_tokens + exchanged_tokens > TOKEN_TOTAL_SUPPLY or \
-            current_round_tokens + exchanged_tokens > CROWDSALE_MAX_CAP or \
+        if current_round_tokens + exchanged_tokens > CROWDSALE_MAX_CAP or \
             current_round_neo + sent_amount_neo > CROWDSALE_PERSONAL_CAP:
             
-            return [0, 0]
+            return [0, 0, state]
     
-    return [exchanged_tokens, sent_amount_neo]
+    return [exchanged_tokens, sent_amount_neo, state]
 
 
 def get_amount_requested(ctx, address, neo_amount, state, sending_time):
