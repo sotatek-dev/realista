@@ -1,5 +1,23 @@
 from ret.token.rettoken import *
 from boa.interop.Neo.Storage import *
+from boa.builtins import concat
+
+
+def get_contributed_neo(ctx, address, sale_prefix):
+    return storage_get(ctx, address, concat(sale_prefix, STORAGE_KEY_CONTRIBUTED_NEO))
+
+
+def set_contributed_neo(ctx, sale_prefix, address, val):
+    return storage_put(ctx, address, val, concat(sale_prefix, STORAGE_KEY_CONTRIBUTED_NEO))
+
+
+def get_minted_tokens(ctx, sale_prefix):
+    return storage_get(ctx, STORAGE_KEY_MINTED_TOKENS, sale_prefix)
+
+
+def set_minted_token(ctx, sale_prefix, val):
+    return storage_put(ctx, STORAGE_KEY_MINTED_TOKENS, val, sale_prefix)
+
 
 def get_config(ctx, config_name):
     return storage_get(ctx, config_name, STORAGE_PREFIX_CONFIG)

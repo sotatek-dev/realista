@@ -9,20 +9,12 @@ from ret.common.time import get_now
 from ret.common.other import *
 from ret.token.kyc import get_kyc_status
 
-# OnInvalidKYCAddress = RegisterAction('invalid_registration', 'address')
-OnKYCRegister = RegisterAction('kyc_registration', 'address')
 OnTransfer = RegisterAction('transfer', 'addr_from', 'addr_to', 'amount')
 OnRefund = RegisterAction('refund', 'addr_to', 'amount')
 
-WHITELISTSALE_OPEN = 1509431946
-WHITELISTSALE_CLOSE = 1509431946 + 86400 * 3
-WHITELISTSALE_ROUND_KEY = b'in_whitelistsale'
-WHITELISTSALE_PERSONAL_KEY = b'whitelistsale'
-WHITELISTSALE_MAX_CAP = 70000000 * 100000000 # 70M
-WHITELISTSALE_RATE = 4666 * 100000000
-WHITELISTSALE_UPPER_RATE = 5000 * 100000000
-WHITELISTSALE_THRESHOLD = 400 * 4666 * 100000000
-WHITELISTSALE_PERSONAL_CAP = 400 * 4666 * 100000000 + 100 * 5000 * 100000000
+WHITELIST_SALE_MAX_CAP = 70000000 * 100000000 # 70M
+WHITELIST_SALE_THRESHOLD = 400 * 100000000 # 400 NEO
+WHITELIST_SALE_PERSONAL_CAP = 500 * 100000000 # 500 NEO
 
 
 def whitelist_perform_exchange(ctx):
@@ -53,25 +45,21 @@ def whitelist_perform_exchange(ctx):
     # lookup the current balance of the address
     current_balance = get_balance(ctx, attachments[1])
 
-    whitelistsale_personal_key = concat(WHITELISTSALE_PERSONAL_KEY, attachments[1])
-    whitelistsale_personal_balance = storage_get(ctx, attachments[1], WHITELISTSALE_PERSONAL_KEY)
-    whitelistsale_round_balance = Get(ctx, WHITELISTSALE_ROUND_KEY)
+    minted_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_WHITELIST)
+    contributed_neo = get_contributed_neo(ctx, attachments[1], STORAGE_PREFIX_PURCHASED_WHITELIST)
 
     # calculate the amount of tokens the attached neo will earn
     exchanged_tokens = whitelist_get_amount_requested(ctx, attachments[1], attachments[2])
-
-    # if you want to exchange gas instead of neo, use this
-    # exchanged_tokens += attachments[3] * TOKENS_PER_GAS / 100000000
 
     # add it to the the exchanged tokens and persist in storage
     new_total = exchanged_tokens + current_balance
     set_balance(ctx, attachments[1], new_total)
 
-    new_whitelistsale_personal_total = exchanged_tokens + whitelistsale_personal_balance
-    Put(ctx, whitelistsale_personal_key, new_whitelistsale_personal_total)
+    new_minted_tokens = exchanged_tokens + minted_tokens
+    set_minted_token(ctx, STORAGE_PREFIX_PURCHASED_WHITELIST, new_minted_tokens)
     
-    new_whitelistsale_round_total = exchanged_tokens + whitelistsale_round_balance
-    Put(ctx, WHITELISTSALE_ROUND_KEY, new_whitelistsale_round_total)
+    new_contributed_neo = attachments[2] + contributed_neo
+    set_contributed_neo(ctx, STORAGE_PREFIX_PURCHASED_WHITELIST, attachments[1], new_contributed_neo)
 
     # update the in circulation amount
     result = add_to_circulation(ctx, exchanged_tokens)
@@ -120,12 +108,12 @@ def whitelist_can_exchange(ctx, attachments, verify_only):
     # this would work for accepting gas
     # amount_requested = attachments.gas_attached * token.tokens_per_gas / 100000000
 
-    exchange_ok = whitelist_calculate_can_exchange(ctx, amount_requested, attachments[1], verify_only)
+    exchange_ok = whitelist_calculate_can_exchange(ctx, attachments[2], amount_requested, attachments[1], verify_only)
 
     return exchange_ok
 
 
-def whitelist_calculate_can_exchange(ctx, amount, address, verify_only):
+def whitelist_calculate_can_exchange(ctx, neo_amount, amount, address, verify_only):
     """
     Perform custom token exchange calculations here.
 
@@ -135,44 +123,40 @@ def whitelist_calculate_can_exchange(ctx, amount, address, verify_only):
         bool: Whether or not an address can exchange a specified amount
     """
     now = get_now()
-    WHITELIST_SALE_OPEN = get_config(ctx, 'WHITELIST_SALE_OPEN')
 
-    current_in_circulation = Get(ctx, TOKEN_CIRC_KEY)
-    
-    personal_key = concat(WHITELISTSALE_PERSONAL_KEY, address)
-    personal_balance = Get(ctx, personal_key)
-    round_balance = Get(ctx, WHITELISTSALE_ROUND_KEY)
+    current_in_circulation = Get(ctx, STORAGE_KEY_CIRCULATION)
+    minted_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_WHITELIST)
+    contributed_neo = get_contributed_neo(ctx, address, STORAGE_PREFIX_PURCHASED_WHITELIST)
 
     new_amount = current_in_circulation + amount
-    new_personal_amount = personal_balance + amount
-    new_round_amount = round_balance + amount
-
-    if now < WHITELIST_SALE_OPEN:
-        return False
+    new_minted_tokens = minted_tokens + amount
+    new_contributed_neo = contributed_neo + neo_amount
 
     if new_amount > TOKEN_TOTAL_SUPPLY:
         return False
 
-    if new_personal_amount > WHITELISTSALE_PERSONAL_CAP:
+    if new_minted_tokens > WHITELIST_SALE_MAX_CAP:
         return False
 
-    if new_round_amount > WHITELISTSALE_MAX_CAP:
+    if new_contributed_neo > WHITELIST_SALE_PERSONAL_CAP:
         return False
 
     return True
 
 
-def whitelist_get_amount_requested(ctx, address, amount):
-    current_personal_key = concat(WHITELISTSALE_PERSONAL_KEY, address)
-    current_personal_balance = Get(ctx, current_personal_key)
-    amount_requested = amount * WHITELISTSALE_RATE / 100000000
+def whitelist_get_amount_requested(ctx, address, neo_amount):
 
-    if current_personal_balance >= WHITELISTSALE_THRESHOLD:
-        amount_requested = amount * WHITELISTSALE_UPPER_RATE / 100000000
-    else: 
-        addition = current_personal_balance + amount_requested - WHITELISTSALE_THRESHOLD
-        if addition > 0:
-            new_addition = addition / WHITELISTSALE_RATE * WHITELISTSALE_UPPER_RATE
-            amount_requested = amount_requested - addition + new_addition
+    contributed_neo = get_contributed_neo(ctx, address, STORAGE_PREFIX_PURCHASED_WHITELIST)
+    WHITELIST_SALE_RATE = get_config(ctx, 'WHITELIST_SALE_RATE')
+    WHITELIST_SALE_UPPER_RATE = get_config(ctx, 'WHITELIST_SALE_UPPER_RATE')
+    
+    if contributed_neo >= WHITELIST_SALE_THRESHOLD:
+        return neo_amount * WHITELIST_SALE_UPPER_RATE / 100000000
+    
+    if contributed_neo + neo_amount <= WHITELIST_SALE_THRESHOLD:
+        return neo_amount * WHITELIST_SALE_RATE / 100000000
 
-    return amount_requested
+    low_rate = (WHITELIST_SALE_THRESHOLD - contributed_neo) * WHITELIST_SALE_RATE / 100000000
+    high_rate = (contributed_neo + neo_amount - WHITELIST_SALE_THRESHOLD) * WHITELIST_SALE_UPPER_RATE / 100000000
+
+    return low_rate + high_rate

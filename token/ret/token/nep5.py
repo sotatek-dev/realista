@@ -23,7 +23,7 @@ def handle_nep51(ctx, operation, args):
         return TOKEN_SYMBOL
 
     elif operation == 'totalSupply':
-        return Get(ctx, TOKEN_CIRC_KEY)
+        return Get(ctx, STORAGE_KEY_CIRCULATION)
 
     elif operation == 'balanceOf':
         if len(args) == 1:

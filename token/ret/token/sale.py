@@ -20,6 +20,10 @@ def perform_exchange(ctx):
     state = get_state(ctx)
     if state == IS_WHITELIST_SALE:
         return whitelist_perform_exchange(ctx)
+    if state == IS_PRESALE:
+        return presale_perform_exchange(ctx)
+    if state == IS_CROWDSALE:
+        return crowdsale_perform_exchange(ctx)
     return False
 
 
@@ -40,6 +44,10 @@ def can_exchange(ctx, attachments, verify_only):
     state = get_state(ctx)
     if state == IS_WHITELIST_SALE:
         return whitelist_can_exchange(ctx, attachments, verify_only)
+    if state == IS_WHITELIST_SALE:
+        return whitelist_can_exchange(ctx, attachments, verify_only)
+    if state == IS_WHITELIST_SALE:
+        return whitelist_can_exchange(ctx, attachments, verify_only)
     return False
 
 
@@ -47,7 +55,15 @@ def get_state(ctx):
     now = get_now()
     WHITELIST_SALE_OPEN = get_config(ctx, 'WHITELIST_SALE_OPEN')
     WHITELIST_SALE_CLOSE = get_config(ctx, 'WHITELIST_SALE_CLOSE')
+    PRESALE_OPEN = get_config(ctx, 'PRESALE_OPEN')
+    PRESALE_CLOSE = get_config(ctx, 'PRESALE_CLOSE')
+    CROWDSALE_OPEN = get_config(ctx, 'CROWDSALE_OPEN')
+    CROWDSALE_CLOSE = CROWDSALE_OPEN + 86400 * 4 * 7
 
     if now >= WHITELIST_SALE_OPEN and now <= WHITELIST_SALE_CLOSE:
         return IS_WHITELIST_SALE
+    if now >= PRESALE_OPEN and now <= PRESALE_CLOSE:
+        return IS_PRESALE
+    if now >= CROWDSALE_OPEN and now <= CROWDSALE_CLOSE:
+        return IS_CROWDSALE
     return IS_NOT_SALE

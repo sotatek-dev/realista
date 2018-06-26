@@ -19,7 +19,6 @@ EMPLOYEE_FUNDS_ADDRESS1 = b'\xb8\x8b\xb9\xa9Bd\x11\xf3\xc8\x01\x06VR\xf2\x12"\x1
 EMPLOYEE_FUNDS_ADDRESS2 = b'\xb8\x8b\xb9\xa9Bd\x11\xf3\xc8\x01\x06VR\xf2\x12"\x15z]\xc6'
 RESERVE_FUNDS_ADDRESS = b'\xb8\x8b\xb9\xa9Bd\x11\xf3\xc8\x01\x06VR\xf2\x12"\x15z]\xc6'
 
-TOKEN_CIRC_KEY = b'in_circulation'
 STORAGE_KEY_KYC = b'kyc_ok'
 STORAGE_PREFIX_BALANCE = b'';
 STORAGE_PREFIX_CONFIG = b'c';
@@ -57,7 +56,7 @@ def crowdsale_available_amount(ctx):
     :return: int The amount of tokens left for sale in the crowdsale
     """
 
-    in_circ = Get(ctx, TOKEN_CIRC_KEY)
+    in_circ = Get(ctx, STORAGE_KEY_CIRCULATION)
 
     available = TOKEN_TOTAL_SUPPLY - in_circ
 
@@ -71,10 +70,10 @@ def add_to_circulation(ctx, amount):
     :param amount: int the amount to add to circulation
     """
 
-    current_supply = Get(ctx, TOKEN_CIRC_KEY)
+    current_supply = Get(ctx, STORAGE_KEY_CIRCULATION)
 
     current_supply += amount
-    Put(ctx, TOKEN_CIRC_KEY, current_supply)
+    Put(ctx, STORAGE_KEY_CIRCULATION, current_supply)
     return True
 
 
@@ -85,4 +84,4 @@ def get_circulation(ctx):
     :return:
         int: Total amount in circulation
     """
-    return Get(ctx, TOKEN_CIRC_KEY)
+    return Get(ctx, STORAGE_KEY_CIRCULATION)

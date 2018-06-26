@@ -130,7 +130,7 @@ def crowdsale_calculate_can_exchange(ctx, neo_amount, amount, address, verify_on
     """
     now = get_now()
 
-    current_in_circulation = Get(ctx, TOKEN_CIRC_KEY)
+    current_in_circulation = Get(ctx, STORAGE_KEY_CIRCULATION)
     
     round_balance = Get(ctx, CROWDSALE_ROUND_KEY)
 

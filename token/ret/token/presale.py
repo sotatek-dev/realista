@@ -136,7 +136,7 @@ def presale_calculate_can_exchange(ctx, amount, address, verify_only):
     """
     now = get_now()
 
-    current_in_circulation = Get(ctx, TOKEN_CIRC_KEY)
+    current_in_circulation = Get(ctx, STORAGE_KEY_CIRCULATION)
     
     personal_key = concat(PRESALE_PERSONAL_KEY, address)
     personal_balance = Get(ctx, personal_key)

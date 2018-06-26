@@ -25,6 +25,8 @@ class TestContract(BoaFixtureTest):
     dispatched_logs = []
 
     now_in_test = 1510235265
+    WHITELIST_SALE_RATE = 4666 * 100000000
+    WHITELIST_SALE_UPPER_RATE = 5000 * 100000000
 
     @classmethod
     def tearDownClass(cls):
@@ -80,6 +82,14 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(results[0].GetBoolean(), True)
 
         tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_CLOSE', self.now_in_test + 86400 * 3])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_RATE', self.WHITELIST_SALE_RATE])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_UPPER_RATE', self.WHITELIST_SALE_UPPER_RATE])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
@@ -269,18 +279,18 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(len(TestContract.dispatched_events), 1)
         evt = TestContract.dispatched_events[0]
         self.assertIsInstance(evt, NotifyEvent)
-        self.assertEqual(evt.amount, 10 * WHITELISTSALE_RATE)
+        self.assertEqual(evt.amount, 10 * self.WHITELIST_SALE_RATE)
         self.assertEqual(evt.addr_to, self.wallet_3_script_hash)
 
         # now the minter should have a balance
         tx, results, total_ops, engine = TestBuild(out, ['balanceOf', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), 10 * WHITELISTSALE_RATE)
+        self.assertEqual(results[0].GetBigInteger(), 10 * self.WHITELIST_SALE_RATE)
 
         # now the total circulation should be bigger
         tx, results, total_ops, engine = TestBuild(out, ['totalSupply', '[]'], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), (10 * WHITELISTSALE_RATE) + TOKEN_INITIAL_AMOUNT)
+        self.assertEqual(results[0].GetBigInteger(), (10 * self.WHITELIST_SALE_RATE) + TOKEN_INITIAL_AMOUNT)
 
     def test_ICOTemplate_6_approval(self):
 
