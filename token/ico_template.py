@@ -14,7 +14,7 @@ from ret.token.sale import *
 from ret.token.kyc import *
 from ret.token.nep5 import *
 from ret.common.other import *
-from boa.interop.Neo.Runtime import GetTrigger, CheckWitness
+from boa.interop.Neo.Runtime import GetTrigger, CheckWitness, GetTime
 from boa.interop.Neo.TriggerType import Application, Verification
 from boa.interop.Neo.Storage import *
 
@@ -148,15 +148,24 @@ def deploy():
         return False
 
     if not Get(ctx, 'initialized'):
+        now = GetTime()
+
         # do deploy logic
         Put(ctx, 'initialized', 1)
         Put(ctx, TOKEN_OWNER, TOKEN_INITIAL_AMOUNT)
-        # Put(ctx, ECOSYSTEM_RESERVE_ADDRESS, TOKEN_ECOSYSTEM_AMOUNT)
-        # Put(ctx, ADVISOR_FUNDS_ADDRESS, TOKEN_ADVISOR_AMOUNT)
-        # Put(ctx, EMPLOYEE_FUNDS_ADDRESS1, TOKEN_EMPLOYEES_AMOUNT_1)
-        # Put(ctx, EMPLOYEE_FUNDS_ADDRESS2 , TOKEN_EMPLOYEES_AMOUNT_2)
-        # Put(ctx, RESERVE_FUNDS_ADDRESS, TOKEN_RESERVE_AMOUNT)
-        # return add_to_circulation(ctx, TOKEN_INITIAL_AMOUNT + TOKEN_ECOSYSTEM_AMOUNT + TOKEN_ADVISOR_AMOUNT + TOKEN_EMPLOYEES_AMOUNT_1 + TOKEN_EMPLOYEES_AMOUNT_2 + TOKEN_RESERVE_AMOUNT)
-        return add_to_circulation(ctx, TOKEN_INITIAL_AMOUNT)
+        Put(ctx, ECOSYSTEM_RESERVE_ADDRESS, TOKEN_ECOSYSTEM_AMOUNT)
+        Put(ctx, ADVISOR_FUNDS_ADDRESS, TOKEN_ADVISOR_AMOUNT)
+        Put(ctx, EMPLOYEE_FUNDS_ADDRESS1, TOKEN_EMPLOYEES_AMOUNT_1)
+        Put(ctx, EMPLOYEE_FUNDS_ADDRESS2 , TOKEN_EMPLOYEES_AMOUNT_2)
+        Put(ctx, RESERVE_FUNDS_ADDRESS, TOKEN_RESERVE_AMOUNT)
+        Put(ctx, AFFILIATE_FUNDS_ADDRESS, TOKEN_AFFILIATE_AMOUNT)
+        Put(ctx, SALE_FUNDS_ADDRESS, TOKEN_SALE_AMOUNT)
+
+        set_locked_until(ctx, ECOSYSTEM_RESERVE_ADDRESS, now + 3 * 30 * 86400)
+        set_locked_until(ctx, ADVISOR_FUNDS_ADDRESS, now + 3 * 30 * 86400)
+        set_locked_until(ctx, EMPLOYEE_FUNDS_ADDRESS1, now + 365 * 86400)
+        set_locked_until(ctx, EMPLOYEE_FUNDS_ADDRESS2, now + 2 * 365 * 86400)
+        set_locked_until(ctx, RESERVE_FUNDS_ADDRESS, now + 12 * 30 * 86400)
+        return add_to_circulation(ctx, TOKEN_TOTAL_SUPPLY)
 
     return False

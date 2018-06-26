@@ -53,6 +53,7 @@ def perform_exchange(ctx):
         return False
 
     add_balance(ctx, attachments[1], exchanged_tokens)
+    sub_balance(ctx, SALE_FUNDS_ADDRESS, exchanged_tokens)
 
     sale_prefix = None
     if state == IS_WHITELIST_SALE:
@@ -66,10 +67,10 @@ def perform_exchange(ctx):
     add_contributed_neo(ctx, sale_prefix, attachments[1], attachments[2])
 
     # update the in circulation amount
-    result = add_to_circulation(ctx, exchanged_tokens)
+    # result = add_to_circulation(ctx, exchanged_tokens)
 
     # dispatch transfer event
-    OnTransfer(attachments[0], attachments[1], exchanged_tokens)
+    OnTransfer(SALE_FUNDS_ADDRESS, attachments[1], exchanged_tokens)
 
     affiliate = do_affiliate(ctx, attachments[1], exchanged_tokens)
 
@@ -89,8 +90,11 @@ def get_exchangeable(ctx, sender_addr, sent_amount_neo, sending_time):
     if exchanged_tokens == 0:
         return [0, 0, state]
 
-    current_tokens = get_balance(ctx, sender_addr)
-    if current_tokens + exchanged_tokens > TOKEN_TOTAL_SUPPLY:
+    '''
+        Check sale tokens
+    '''
+    current_sale_tokens = get_balance(ctx, SALE_FUNDS_ADDRESS)
+    if current_sale_tokens < exchanged_tokens:
         return [0, 0, state]
 
     '''

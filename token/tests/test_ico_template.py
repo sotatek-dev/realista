@@ -139,7 +139,7 @@ class TestContract(BoaFixtureTest):
         # now total supply should be equal to the initial owner amount
         tx, results, total_ops, engine = TestBuild(out, ['totalSupply', '[]'], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), TOKEN_INITIAL_AMOUNT)
+        self.assertEqual(results[0].GetBigInteger(), TOKEN_TOTAL_SUPPLY)
 
         # now the owner should have a balance of the TOKEN_INITIAL_AMOUNT
         tx, results, total_ops, engine = TestBuild(out, ['balanceOf', parse_param([bytearray(TOKEN_OWNER)])], self.GetWallet1(), '0705', '05')
@@ -315,7 +315,7 @@ class TestContract(BoaFixtureTest):
         # now the total circulation should be bigger
         tx, results, total_ops, engine = TestBuild(out, ['totalSupply', '[]'], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), (10 * self.WHITELIST_SALE_RATE) + TOKEN_INITIAL_AMOUNT)
+        self.assertEqual(results[0].GetBigInteger(), TOKEN_TOTAL_SUPPLY)\
 
     def test_ICOTemplate_6_approval(self):
 

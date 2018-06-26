@@ -1,4 +1,4 @@
-from boa.interop.Neo.Runtime import CheckWitness, Notify
+from boa.interop.Neo.Runtime import CheckWitness, Notify, GetTime
 from boa.interop.Neo.Action import RegisterAction
 from boa.interop.Neo.Storage import *
 from boa.builtins import concat
@@ -57,6 +57,12 @@ def do_transfer(ctx, t_from, t_to, amount):
         return False
 
     if CheckWitness(t_from):
+        now = GetTime()
+        locked_until_from = get_locked_until(ctx, t_from)
+        locked_until_to = get_locked_until(ctx, t_to)
+        if now < locked_until_from or now < locked_until_to:
+            log = debug_log("from or to is locked!")
+            return False
 
         if t_from == t_to:
             log = debug_log("transfer to self!")
@@ -98,6 +104,13 @@ def do_transfer_from(ctx, t_from, t_to, amount):
     available_key = concat(t_from, t_to)
 
     if len(available_key) != 40:
+        return False
+
+    now = GetTime()
+    locked_until_from = get_locked_until(ctx, t_from)
+    locked_until_to = get_locked_until(ctx, t_to)
+    if now < locked_until_from or now < locked_until_to:
+        log = debug_log("from or to is locked!")
         return False
 
     available_to_to_addr = Get(ctx, available_key)

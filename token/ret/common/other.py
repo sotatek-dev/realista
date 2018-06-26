@@ -3,6 +3,14 @@ from boa.interop.Neo.Storage import *
 from boa.builtins import concat
 
 
+def get_locked_until(ctx, address):
+    return storage_get(ctx, address, STORAGE_PREFIX_LOCK)
+
+
+def set_locked_until(ctx, address, timestamp):
+    return storage_put(ctx, address, timestamp, STORAGE_PREFIX_LOCK)
+
+
 def get_affiliated_tokens(ctx):
     return storage_get(ctx, STORAGE_KEY_AFFILIATED_TOKENS, STORAGE_PREFIX_OTHER)
 
