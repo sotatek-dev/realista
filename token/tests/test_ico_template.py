@@ -82,13 +82,13 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 0)
 
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_OPEN', self.now_in_test])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_OPEN', self.now_in_test])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
-        # tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_CLOSE', self.now_in_test + 86400 * 3])], self.GetWallet1(), '0705', '05')
-        # self.assertEqual(len(results), 1)
-        # self.assertEqual(results[0].GetBoolean(), True)
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_CLOSE', self.now_in_test + 86400 * 3])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
 
         tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_RATE', self.WHITELIST_SALE_RATE])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
