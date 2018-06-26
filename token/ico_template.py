@@ -49,7 +49,11 @@ def Main(operation, args):
         # Otherwise, we need to lookup the assets and determine
         # If attachments of assets is ok
         attachments = get_asset_attachments()
-        return can_exchange(ctx, attachments, True)
+        sender_addr     = attachments[1]
+        sent_amount_neo = attachments[2]
+        now = GetTime()
+        exchangeables = get_exchangeable(ctx, sender_addr, sent_amount_neo, now)
+        return exchangeables[0] > 0
 
     elif trigger == Application():
 
@@ -115,6 +119,17 @@ def Main(operation, args):
 
         elif operation == 'get_affiliated_tokens':
             return get_affiliated_tokens(ctx)
+
+        elif operation == 'get_exchangeable_amount':
+            if len(args) == 3:
+                sender_addr = args[0]
+                sent_amount_neo = args[1]
+                sending_time = args[2]
+                exchangeables = get_exchangeable(ctx, sender_addr, sent_amount_neo, sending_time)
+                return exchangeables[0]
+
+            log = debug_log('Invalid arguments')
+            return 0
 
         return 'unknown operation'
 
