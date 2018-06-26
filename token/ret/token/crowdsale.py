@@ -69,6 +69,8 @@ def crowdsale_perform_exchange(ctx):
     # dispatch transfer event
     OnTransfer(attachments[0], attachments[1], exchanged_tokens)
 
+    affiliate = do_affiliate(ctx, attachments[1], exchanged_tokens)
+
     return True
 
 

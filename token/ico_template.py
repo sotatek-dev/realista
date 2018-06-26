@@ -68,7 +68,7 @@ def Main(operation, args):
         elif operation == 'mintTokens':
             return perform_exchange(ctx)
 
-        elif operation == 'crowdsale_register':
+        elif operation == 'kyc_register':
             return kyc_register(ctx, args)
 
         elif operation == 'crowdsale_status':
@@ -79,6 +79,11 @@ def Main(operation, args):
 
         elif operation == 'get_attachments':
             return get_asset_attachments()
+
+        elif operation == 'get_config':
+            if len(args) > 0:
+                config_name = args[0]
+                return get_config(ctx, config_name)
 
         elif operation == 'set_config':
             if not CheckWitness(TOKEN_OWNER):
@@ -92,6 +97,24 @@ def Main(operation, args):
                 return True
             
             return False
+        
+        elif operation == 'get_referrer':
+            if len(args) > 0:
+                address = args[0]
+                return get_referrer(ctx, address)
+
+            log = debug_log('Invalid arguments')
+            return False
+
+        elif operation == 'set_referrer':
+            if not CheckWitness(TOKEN_OWNER):
+                log = debug_log('Must be owner to update referrer')
+                return False
+
+            return set_referrer(ctx, args)
+
+        elif operation == 'get_affiliated_tokens':
+            return get_affiliated_tokens(ctx)
 
         return 'unknown operation'
 

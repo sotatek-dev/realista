@@ -3,6 +3,34 @@ from boa.interop.Neo.Storage import *
 from boa.builtins import concat
 
 
+def get_affiliated_tokens(ctx):
+    return storage_get(ctx, STORAGE_KEY_AFFILIATED_TOKENS, STORAGE_PREFIX_OTHER)
+
+
+def get_referrer(ctx, address):
+    return storage_get(ctx, address, STORAGE_PREFIX_REFERRER)
+
+
+def set_referrer(ctx, args):
+    if len(args) == 2:
+        address = args[0]
+        referrer = args[1]
+        storage_put(ctx, address, referrer, STORAGE_PREFIX_REFERRER)
+        return True
+
+    return False
+
+
+def get_affiliated_tokens(ctx):
+    return storage_get(ctx, STORAGE_KEY_AFFILIATED_TOKENS, STORAGE_PREFIX_OTHER)
+
+
+def add_affiliated_tokens(ctx, amount):
+    old_total = get_affiliated_tokens(ctx)
+    new_total = old_total + amount
+    return storage_put(ctx, STORAGE_KEY_AFFILIATED_TOKENS, new_total, STORAGE_PREFIX_OTHER)
+
+
 def get_contributed_neo(ctx, address, sale_prefix):
     return storage_get(ctx, address, concat(sale_prefix, STORAGE_KEY_CONTRIBUTED_NEO))
 

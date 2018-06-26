@@ -217,7 +217,7 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(results[0].GetBoolean(), False)
 
         # Try to register as a non owner
-        tx, results, total_ops, engine = TestBuild(out, ['crowdsale_register', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet3(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_register', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet3(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), False)
 
@@ -229,7 +229,7 @@ class TestContract(BoaFixtureTest):
         TestContract.dispatched_events = []
 
         # register an address
-        tx, results, total_ops, engine = TestBuild(out, ['crowdsale_register', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_register', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 1)
 
@@ -239,7 +239,7 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(evt.event_payload[0], b'kyc_registration')
 
         # register 2 addresses at once
-        tx, results, total_ops, engine = TestBuild(out, ['crowdsale_register', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_register', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 2)
 
@@ -289,7 +289,7 @@ class TestContract(BoaFixtureTest):
         out = output.write()
 
         # register an address
-        tx, results, total_ops, engine = TestBuild(out, ['crowdsale_register', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_register', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 1)
 
