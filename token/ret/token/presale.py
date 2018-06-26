@@ -8,20 +8,16 @@ from ret.common.txio import get_asset_attachments
 from ret.common.time import get_now
 from ret.token.kyc import get_kyc_status
 from ret.token.affiliate import *
+from ret.common.other import *
 
 OnTransfer = RegisterAction('transfer', 'addr_from', 'addr_to', 'amount')
 OnRefund = RegisterAction('refund', 'addr_to', 'amount')
 
-PRESALE_OPEN = 1508288688
-PRESALE_CLOSE = 1508288688 + 86400 * 3
-PRESALE_ROUND_KEY = b'in_presale'
-PRESALE_PERSONAL_KEY = b'presale'
 PRESALE_MAX_CAP = 65000000 * 100000000 # 65M
-PRESALE_RATE = 4333 * 100000000
-PRESALE_PERSONAL_CAP = 250 * 4333 * 100000000
+PRESALE_PERSONAL_CAP = 250 * 100000000 # 250 NEO
 
 
-def presale_perform_exchange(ctx, args):
+def presale_perform_exchange(ctx):
     """
 
      :param token:Token The token object with NEP5/sale settings
@@ -49,9 +45,8 @@ def presale_perform_exchange(ctx, args):
     # lookup the current balance of the address
     current_balance = Get(ctx, attachments[1])
 
-    personal_key = concat(PRESALE_PERSONAL_KEY, attachments[1])
-    personal_balance = Get(ctx, personal_key)
-    round_balance = Get(ctx, PRESALE_ROUND_KEY)
+    minted_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_PRESALE)
+    contributed_neo = get_contributed_neo(ctx, attachments[1], STORAGE_PREFIX_PURCHASED_PRESALE)
 
     # calculate the amount of tokens the attached neo will earn
     exchanged_tokens = presale_get_amount_requested(ctx, attachments[1], attachments[2])
@@ -63,21 +58,17 @@ def presale_perform_exchange(ctx, args):
     new_total = exchanged_tokens + current_balance
     Put(ctx, attachments[1], new_total)
 
-    new_personal_total = exchanged_tokens + personal_balance
-    Put(ctx, personal_key, new_personal_total)
-
-    new_round_total = exchanged_tokens + round_balance
-    Put(ctx, PRESALE_ROUND_KEY, new_round_total)
+    new_minted_tokens = exchanged_tokens + minted_tokens
+    set_minted_token(ctx, STORAGE_PREFIX_PURCHASED_PRESALE, new_minted_tokens)
+    
+    new_contributed_neo = attachments[2] + contributed_neo
+    set_contributed_neo(ctx, STORAGE_PREFIX_PURCHASED_PRESALE, attachments[1], new_contributed_neo)
 
     # update the in circulation amount
     result = add_to_circulation(ctx, exchanged_tokens)
 
     # dispatch transfer event
     OnTransfer(attachments[0], attachments[1], exchanged_tokens)
-
-    if len(args) > 0:
-        address = args[0]
-        do_affiliate(ctx, exchanged_tokens, attachments[1], address)
 
     return True
 
@@ -120,12 +111,12 @@ def presale_can_exchange(ctx, attachments, verify_only):
     # this would work for accepting gas
     # amount_requested = attachments.gas_attached * token.tokens_per_gas / 100000000
 
-    exchange_ok = presale_calculate_can_exchange(ctx, amount_requested, attachments[1], verify_only)
+    exchange_ok = presale_calculate_can_exchange(ctx, attachments[2], amount_requested, attachments[1], verify_only)
 
     return exchange_ok
 
 
-def presale_calculate_can_exchange(ctx, amount, address, verify_only):
+def presale_calculate_can_exchange(ctx, neo_amount, amount, address, verify_only):
     """
     Perform custom token exchange calculations here.
 
@@ -134,34 +125,32 @@ def presale_calculate_can_exchange(ctx, amount, address, verify_only):
     :return:
         bool: Whether or not an address can exchange a specified amount
     """
-    now = get_now()
 
     current_in_circulation = Get(ctx, STORAGE_KEY_CIRCULATION)
     
-    personal_key = concat(PRESALE_PERSONAL_KEY, address)
-    personal_balance = Get(ctx, personal_key)
-    round_balance = Get(ctx, PRESALE_ROUND_KEY)
+    current_in_circulation = Get(ctx, STORAGE_KEY_CIRCULATION)
+    minted_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_PRESALE)
+    contributed_neo = get_contributed_neo(ctx, address, STORAGE_PREFIX_PURCHASED_PRESALE)
 
     new_amount = current_in_circulation + amount
-    new_personal_amount = personal_balance + amount
-    new_round_amount = round_balance + amount
-
-    if now < PRESALE_OPEN:
-        return False
+    new_minted_tokens = minted_tokens + amount
+    new_contributed_neo = contributed_neo + neo_amount
 
     if new_amount > TOKEN_TOTAL_SUPPLY:
         return False
 
-    if new_round_amount > PRESALE_MAX_CAP:
+    if new_minted_tokens > PRESALE_MAX_CAP:
         return False
 
-    if new_personal_amount > PRESALE_PERSONAL_CAP:
+    if new_contributed_neo > PRESALE_PERSONAL_CAP:
         return False
 
     return True
 
 
-def presale_get_amount_requested(ctx, address, amount):
-    amount_requested = amount * PRESALE_RATE / 100000000
+def presale_get_amount_requested(ctx, address, neo_amount):
+    PRESALE_RATE = get_config(ctx, 'PRESALE_RATE')
+
+    amount_requested = neo_amount * PRESALE_RATE / 100000000
 
     return amount_requested

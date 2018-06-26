@@ -122,7 +122,6 @@ def whitelist_calculate_can_exchange(ctx, neo_amount, amount, address, verify_on
     :return:
         bool: Whether or not an address can exchange a specified amount
     """
-    now = get_now()
 
     current_in_circulation = Get(ctx, STORAGE_KEY_CIRCULATION)
     minted_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_WHITELIST)

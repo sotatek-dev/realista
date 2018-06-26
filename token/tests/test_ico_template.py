@@ -27,6 +27,11 @@ class TestContract(BoaFixtureTest):
     now_in_test = 1510235265
     WHITELIST_SALE_RATE = 4666 * 100000000
     WHITELIST_SALE_UPPER_RATE = 5000 * 100000000
+    PRESALE_RATE = 4333 * 100000000
+    CROWDSALE_WEEK1_RATE = 4000 * 100000000
+    CROWDSALE_WEEK2_RATE = 3833 * 100000000
+    CROWDSALE_WEEK3_RATE = 3666 * 100000000
+    CROWDSALE_WEEK4_RATE = 3500 * 100000000
 
     @classmethod
     def tearDownClass(cls):
@@ -77,19 +82,39 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 0)
 
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_OPEN', self.now_in_test])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_OPEN', self.now_in_test])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_CLOSE', self.now_in_test + 86400 * 3])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
+        # tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_CLOSE', self.now_in_test + 86400 * 3])], self.GetWallet1(), '0705', '05')
+        # self.assertEqual(len(results), 1)
+        # self.assertEqual(results[0].GetBoolean(), True)
 
         tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_RATE', self.WHITELIST_SALE_RATE])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
         tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_UPPER_RATE', self.WHITELIST_SALE_UPPER_RATE])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_RATE', self.PRESALE_RATE])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_WEEK1_RATE', self.CROWDSALE_WEEK1_RATE])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_WEEK2_RATE', self.CROWDSALE_WEEK2_RATE])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_WEEK3_RATE', self.CROWDSALE_WEEK3_RATE])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_WEEK4_RATE', self.CROWDSALE_WEEK4_RATE])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 

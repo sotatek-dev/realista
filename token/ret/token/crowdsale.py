@@ -7,23 +7,16 @@ from ret.token.rettoken import *
 from ret.common.txio import get_asset_attachments
 from ret.common.time import get_now
 from ret.token.affiliate import *
+from ret.common.other import *
 
 OnTransfer = RegisterAction('transfer', 'addr_from', 'addr_to', 'amount')
 OnRefund = RegisterAction('refund', 'addr_to', 'amount')
 
-CROWDSALE_OPEN = 1509642040
-CROWDSALE_CLOSE = 1509642040 + 86400 * 7 * 4
-CROWDSALE_ROUND_KEY = b'in_crowdsale'
-CROWDSALE_NEO_PERSONAL_KEY = b'crowdsale_neo'
 CROWDSALE_MAX_CAP = 480000000 * 100000000 # 480M
-CROWDSALE_WEEK1_RATE = 4000 * 100000000
-CROWDSALE_WEEK2_RATE = 3833 * 100000000
-CROWDSALE_WEEK3_RATE = 3666 * 100000000
-CROWDSALE_WEEK4_RATE = 3500 * 100000000
-CROWDSALE_PERSONAL_NEO_CAP = 500 * 100000000 # 500 NEO
+CROWDSALE_PERSONAL_CAP = 500 * 100000000 # 500 NEO
 
 
-def crowdsale_perform_exchange(ctx, args):
+def crowdsale_perform_exchange(ctx):
     """
 
      :param token:Token The token object with NEP5/sale settings
@@ -51,9 +44,8 @@ def crowdsale_perform_exchange(ctx, args):
     # lookup the current balance of the address
     current_balance = Get(ctx, attachments[1])
 
-    personal_neo_key = concat(CROWDSALE_NEO_PERSONAL_KEY, attachments[1])
-    round_balance = Get(ctx, CROWDSALE_ROUND_KEY)
-    personal_neo_balance = Get(ctx, personal_neo_key)
+    minted_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_CROWDSALE)
+    contributed_neo = get_contributed_neo(ctx, attachments[1], STORAGE_PREFIX_PURCHASED_CROWDSALE)
 
     # calculate the amount of tokens the attached neo will earn
     exchanged_tokens = crowdsale_get_amount_requested(ctx, attachments[1], attachments[2])
@@ -65,21 +57,17 @@ def crowdsale_perform_exchange(ctx, args):
     new_total = exchanged_tokens + current_balance
     Put(ctx, attachments[1], new_total)
 
-    new_personal_neo_total = attachments[2] + personal_neo_balance
-    Put(ctx, personal_neo_key, new_personal_neo_total)
-
-    new_round_total = exchanged_tokens + round_balance
-    Put(ctx, CROWDSALE_ROUND_KEY, new_round_total)
+    new_minted_tokens = exchanged_tokens + minted_tokens
+    set_minted_token(ctx, STORAGE_PREFIX_PURCHASED_CROWDSALE, new_minted_tokens)
+    
+    new_contributed_neo = attachments[2] + contributed_neo
+    set_contributed_neo(ctx, STORAGE_PREFIX_PURCHASED_CROWDSALE, attachments[1], new_contributed_neo)
 
     # update the in circulation amount
     result = add_to_circulation(ctx, exchanged_tokens)
 
     # dispatch transfer event
     OnTransfer(attachments[0], attachments[1], exchanged_tokens)
-
-    if len(args) > 0:
-        address = args[0]
-        do_affiliate(ctx, exchanged_tokens, attachments[1], address)
 
     return True
 
@@ -132,36 +120,37 @@ def crowdsale_calculate_can_exchange(ctx, neo_amount, amount, address, verify_on
 
     current_in_circulation = Get(ctx, STORAGE_KEY_CIRCULATION)
     
-    round_balance = Get(ctx, CROWDSALE_ROUND_KEY)
-
-    personal_neo_key = concat(CROWDSALE_NEO_PERSONAL_KEY, address)
-    personal_neo_balance = Get(ctx, personal_neo_key)
+    minted_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_CROWDSALE)
+    contributed_neo = get_contributed_neo(ctx, address, STORAGE_PREFIX_PURCHASED_CROWDSALE)
 
     new_amount = current_in_circulation + amount
-    new_round_amount = round_balance + amount
-    new_personal_neo_amount = personal_neo_balance + neo_amount
-
-    if now < CROWDSALE_OPEN:
-        return False
+    new_minted_tokens = minted_tokens + amount
+    new_contributed_neo = contributed_neo + neo_amount
 
     if new_amount > TOKEN_TOTAL_SUPPLY:
         return False
 
-    if new_round_amount > CROWDSALE_MAX_CAP:
+    if new_minted_tokens > CROWDSALE_MAX_CAP:
         return False
 
-    if new_personal_neo_amount > CROWDSALE_PERSONAL_NEO_CAP:
+    if new_contributed_neo > CROWDSALE_PERSONAL_CAP:
         return False
 
     return True
 
 
-def crowdsale_get_amount_requested(ctx, address, amount):
+def crowdsale_get_amount_requested(ctx, address, neo_amount):
     now = get_now()
-    rate = 0
+    CROWDSALE_OPEN = get_config(ctx, 'CROWDSALE_OPEN')
+    CROWDSALE_CLOSE = CROWDSALE_OPEN + 86400 * 4 * 7
+    CROWDSALE_WEEK1_RATE = get_config(ctx, 'CROWDSALE_WEEK1_RATE')
+    CROWDSALE_WEEK2_RATE = get_config(ctx, 'CROWDSALE_WEEK2_RATE')
+    CROWDSALE_WEEK3_RATE = get_config(ctx, 'CROWDSALE_WEEK3_RATE')
+    CROWDSALE_WEEK4_RATE = get_config(ctx, 'CROWDSALE_WEEK4_RATE')
+    rate = 1
 
     if now < CROWDSALE_OPEN:
-        rate = 0
+        rate = 1
     elif now < CROWDSALE_OPEN + 86400 * 7:
         rate = CROWDSALE_WEEK1_RATE
     elif now < CROWDSALE_OPEN + 86400 * 7 * 2:
@@ -171,8 +160,8 @@ def crowdsale_get_amount_requested(ctx, address, amount):
     elif now <= CROWDSALE_CLOSE:
         rate = CROWDSALE_WEEK4_RATE
     else:
-        rate = 0
+        rate = 1
     
-    amount_requested = amount * rate / 100000000
+    amount_requested = neo_amount * rate / 100000000
 
     return amount_requested
