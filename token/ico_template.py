@@ -88,7 +88,8 @@ def Main(operation, args):
             if len(args) == 2:
                 config_name = args[0]
                 config_value = args[1]
-                return set_config(ctx, config_name, config_value)
+                set_config(ctx, config_name, config_value)
+                return True
             
             return False
 
