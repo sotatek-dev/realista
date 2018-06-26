@@ -222,7 +222,7 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(results[0].GetBoolean(), False)
 
         # Get status of non registered address
-        tx, results, total_ops, engine = TestBuild(out, ['crowdsale_status', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet3(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_status', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet3(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), False)
 
@@ -244,7 +244,7 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(results[0].GetBigInteger(), 2)
 
         # now check reg status
-        tx, results, total_ops, engine = TestBuild(out, ['crowdsale_status', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet3(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_status', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet3(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 

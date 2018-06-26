@@ -1,11 +1,10 @@
 from boa.interop.Neo.Blockchain import GetHeight
-from boa.interop.Neo.Runtime import CheckWitness
+from boa.interop.Neo.Runtime import CheckWitness, GetTime
 from boa.interop.Neo.Action import RegisterAction
 from boa.interop.Neo.Storage import Get, Put
 from boa.builtins import concat
 from ret.token.rettoken import *
 from ret.common.txio import get_asset_attachments
-from ret.common.time import get_now
 from ret.token.affiliate import *
 from ret.common.other import *
 
@@ -118,7 +117,7 @@ def crowdsale_calculate_can_exchange(ctx, neo_amount, amount, address, verify_on
     :return:
         bool: Whether or not an address can exchange a specified amount
     """
-    now = get_now()
+    now = GetTime()
 
     current_in_circulation = Get(ctx, STORAGE_KEY_CIRCULATION)
     
@@ -142,7 +141,7 @@ def crowdsale_calculate_can_exchange(ctx, neo_amount, amount, address, verify_on
 
 
 def crowdsale_get_amount_requested(ctx, address, neo_amount):
-    now = get_now()
+    now = GetTime()
     CROWDSALE_OPEN = get_config(ctx, 'CROWDSALE_OPEN')
     CROWDSALE_CLOSE = CROWDSALE_OPEN + 86400 * 4 * 7
     CROWDSALE_WEEK1_RATE = get_config(ctx, 'CROWDSALE_WEEK1_RATE')

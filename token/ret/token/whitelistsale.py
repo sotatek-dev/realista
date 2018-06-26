@@ -1,11 +1,10 @@
 from boa.interop.Neo.Blockchain import GetHeight
-from boa.interop.Neo.Runtime import CheckWitness
+from boa.interop.Neo.Runtime import CheckWitness, GetTime
 from boa.interop.Neo.Action import RegisterAction
 from boa.interop.Neo.Storage import Get, Put
 from boa.builtins import concat
 from ret.token.rettoken import *
 from ret.common.txio import get_asset_attachments
-from ret.common.time import get_now
 from ret.common.other import *
 from ret.token.kyc import get_kyc_status
 

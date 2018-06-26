@@ -3,6 +3,7 @@ from ret.token.presale import *
 from ret.token.crowdsale import *
 from ret.common.other import *
 from ret.common.time import *
+from boa.interop.Neo.Runtime import GetTime
 
 IS_NOT_SALE = 0
 IS_WHITELIST_SALE = 1
@@ -52,7 +53,7 @@ def can_exchange(ctx, attachments, verify_only):
 
 
 def get_state(ctx):
-    now = get_now()
+    now = GetTime()
     WHITELIST_SALE_OPEN = get_config(ctx, 'WHITELIST_SALE_OPEN')
     WHITELIST_SALE_CLOSE = get_config(ctx, 'WHITELIST_SALE_CLOSE')
     PRESALE_OPEN = get_config(ctx, 'PRESALE_OPEN')

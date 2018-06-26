@@ -71,10 +71,10 @@ def Main(operation, args):
         elif operation == 'kyc_register':
             return kyc_register(ctx, args)
 
-        elif operation == 'crowdsale_status':
+        elif operation == 'kyc_status':
             return kyc_status(ctx, args)
 
-        elif operation == 'crowdsale_available':
+        elif operation == 'available_tokens':
             return crowdsale_available_amount(ctx)
 
         elif operation == 'get_attachments':
@@ -136,6 +136,12 @@ def deploy():
         # do deploy logic
         Put(ctx, 'initialized', 1)
         Put(ctx, TOKEN_OWNER, TOKEN_INITIAL_AMOUNT)
+        # Put(ctx, ECOSYSTEM_RESERVE_ADDRESS, TOKEN_ECOSYSTEM_AMOUNT)
+        # Put(ctx, ADVISOR_FUNDS_ADDRESS, TOKEN_ADVISOR_AMOUNT)
+        # Put(ctx, EMPLOYEE_FUNDS_ADDRESS1, TOKEN_EMPLOYEES_AMOUNT_1)
+        # Put(ctx, EMPLOYEE_FUNDS_ADDRESS2 , TOKEN_EMPLOYEES_AMOUNT_2)
+        # Put(ctx, RESERVE_FUNDS_ADDRESS, TOKEN_RESERVE_AMOUNT)
+        # return add_to_circulation(ctx, TOKEN_INITIAL_AMOUNT + TOKEN_ECOSYSTEM_AMOUNT + TOKEN_ADVISOR_AMOUNT + TOKEN_EMPLOYEES_AMOUNT_1 + TOKEN_EMPLOYEES_AMOUNT_2 + TOKEN_RESERVE_AMOUNT)
         return add_to_circulation(ctx, TOKEN_INITIAL_AMOUNT)
 
     return False
