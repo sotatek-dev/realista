@@ -66,7 +66,7 @@ def Main(operation, args):
         # the following are handled by crowdsale
 
         elif operation == 'mintTokens':
-            return perform_exchange(ctx, args)
+            return perform_exchange(ctx)
 
         elif operation == 'crowdsale_register':
             return kyc_register(ctx, args)

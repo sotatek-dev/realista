@@ -1,14 +1,6 @@
 from ret.token.rettoken import *
 from boa.interop.Neo.Storage import *
 
-STORAGE_PREFIX_BALANCE = b''
-STORAGE_PREFIX_CONFIG = b'c'
-STORAGE_PREFIX_WHITELIST_SALE = b'p1'
-STORAGE_PREFIX_PRESALE = b'p2'
-STORAGE_PREFIX_CROWDSALE = b'p3'
-
-STORAGE_KEY_KYC = b'kyc'
-
 def get_config(ctx, config_name):
     return storage_get(ctx, config_name, STORAGE_PREFIX_CONFIG)
 

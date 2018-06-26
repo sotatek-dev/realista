@@ -1,10 +1,15 @@
 from ret.token.whitelistsale import *
 from ret.token.presale import *
 from ret.token.crowdsale import *
-from ret.token.kyc import *
+from ret.common.other import *
+from ret.common.time import *
 
+IS_NOT_SALE = 0
+IS_WHITELIST_SALE = 1
+IS_PRESALE = 2
+IS_CROWDSALE = 3
 
-def perform_exchange(ctx, args):
+def perform_exchange(ctx):
     """
 
      :param token:Token The token object with NEP5/sale settings
@@ -12,9 +17,10 @@ def perform_exchange(ctx, args):
          bool: Whether the exchange was successful
      """
 
-    return whitelist_perform_exchange(ctx)
-    # return presale_perform_exchange(ctx, args)
-    # return crowdsale_perform_exchange(ctx, args)
+    state = get_state(ctx)
+    if state == IS_WHITELIST_SALE:
+        return whitelist_perform_exchange(ctx)
+    return False
 
 
 def can_exchange(ctx, attachments, verify_only):
@@ -31,6 +37,17 @@ def can_exchange(ctx, attachments, verify_only):
         bool: Whether an invocation meets requirements for exchange
     """
 
-    return whitelist_can_exchange(ctx, attachments, verify_only)
-    # return presale_can_exchange(ctx, attachments, verify_only)
-    # return crowdsale_can_exchange(ctx, attachments, verify_only)
+    state = get_state(ctx)
+    if state == IS_WHITELIST_SALE:
+        return whitelist_can_exchange(ctx, attachments, verify_only)
+    return False
+
+
+def get_state(ctx):
+    now = get_now()
+    WHITELIST_SALE_OPEN = get_config(ctx, 'WHITELIST_SALE_OPEN')
+    WHITELIST_SALE_CLOSE = get_config(ctx, 'WHITELIST_SALE_CLOSE')
+
+    if now >= WHITELIST_SALE_OPEN and now <= WHITELIST_SALE_CLOSE:
+        return IS_WHITELIST_SALE
+    return IS_NOT_SALE
