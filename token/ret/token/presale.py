@@ -41,27 +41,12 @@ def presale_perform_exchange(ctx):
         #    OnRefund(attachments.sender_addr, attachments.gas_attached)
         return False
 
-    # lookup the current balance of the address
-    current_balance = Get(ctx, attachments[1])
-
-    minted_tokens = get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_PRESALE)
-    contributed_neo = get_contributed_neo(ctx, attachments[1], STORAGE_PREFIX_PURCHASED_PRESALE)
-
     # calculate the amount of tokens the attached neo will earn
     exchanged_tokens = presale_get_amount_requested(ctx, attachments[1], attachments[2])
 
-    # if you want to exchange gas instead of neo, use this
-    # exchanged_tokens += attachments[3] * TOKENS_PER_GAS / 100000000
-
-    # add it to the the exchanged tokens and persist in storage
-    new_total = exchanged_tokens + current_balance
-    Put(ctx, attachments[1], new_total)
-
-    new_minted_tokens = exchanged_tokens + minted_tokens
-    set_minted_token(ctx, STORAGE_PREFIX_PURCHASED_PRESALE, new_minted_tokens)
-    
-    new_contributed_neo = attachments[2] + contributed_neo
-    set_contributed_neo(ctx, STORAGE_PREFIX_PURCHASED_PRESALE, attachments[1], new_contributed_neo)
+    add_balance(ctx, attachments[1], exchanged_tokens)
+    add_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_PRESALE, exchanged_tokens)
+    add_contributed_neo(ctx, STORAGE_PREFIX_PURCHASED_PRESALE, attachments[1], attachments[2])
 
     # update the in circulation amount
     result = add_to_circulation(ctx, exchanged_tokens)

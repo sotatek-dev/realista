@@ -35,16 +35,20 @@ def get_contributed_neo(ctx, address, sale_prefix):
     return storage_get(ctx, address, concat(sale_prefix, STORAGE_KEY_CONTRIBUTED_NEO))
 
 
-def set_contributed_neo(ctx, sale_prefix, address, val):
-    return storage_put(ctx, address, val, concat(sale_prefix, STORAGE_KEY_CONTRIBUTED_NEO))
+def add_contributed_neo(ctx, sale_prefix, address, val):
+    current_neo = get_contributed_neo(ctx, address, sale_prefix)
+    new_neo = current_neo + val
+    return storage_put(ctx, address, new_neo, concat(sale_prefix, STORAGE_KEY_CONTRIBUTED_NEO))
 
 
 def get_minted_tokens(ctx, sale_prefix):
     return storage_get(ctx, STORAGE_KEY_MINTED_TOKENS, sale_prefix)
 
 
-def set_minted_token(ctx, sale_prefix, val):
-    return storage_put(ctx, STORAGE_KEY_MINTED_TOKENS, val, sale_prefix)
+def add_minted_tokens(ctx, sale_prefix, val):
+    current_tokens = get_minted_tokens(ctx, sale_prefix)
+    new_tokens = current_tokens + val
+    return storage_put(ctx, STORAGE_KEY_MINTED_TOKENS, new_tokens, sale_prefix)
 
 
 def get_config(ctx, config_name):
@@ -59,8 +63,22 @@ def get_balance(ctx, address):
     return storage_get(ctx, address, STORAGE_PREFIX_BALANCE)
 
 
-def set_balance(ctx, address, balance):
-    return storage_put(ctx, address, balance, STORAGE_PREFIX_BALANCE)
+def add_balance(ctx, address, amount):
+    current_balance = get_balance(ctx, address)
+    new_balance = current_balance + amount
+    return storage_put(ctx, address, new_balance, STORAGE_PREFIX_BALANCE)
+
+
+def sub_balance(ctx, address, amount):
+    current_balance = get_balance(ctx, address)
+    if current_balance < amount:
+        log = debug_log('insufficient funds')
+        return False
+    if current_balance == amount:
+        return storage_delete(ctx, address, STORAGE_PREFIX_BALANCE)
+    
+    new_balance = current_balance - amount
+    return storage_put(ctx, address, new_balance, STORAGE_PREFIX_BALANCE)
 
 
 def debug_log(msg):

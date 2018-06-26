@@ -17,7 +17,9 @@ ECOSYSTEM_RESERVE_ADDRESS = b'BU\xbbKt\xae\xe6\xb0f\xbc\x08\x80*\xe5\x96%\xcb\x0
 ADVISOR_FUNDS_ADDRESS = b'\xa6\xc5\x9d\xeb\xf0\xd7(\xbd\x14\x89\xcd\xb9\xd9{\xd1\x90\xcb\x0b\xdch'
 EMPLOYEE_FUNDS_ADDRESS1 = b'\xb8\x8b\xb9\xa9Bd\x11\xf3\xc8\x01\x06VR\xf2\x12"\x15z]\xc6'
 EMPLOYEE_FUNDS_ADDRESS2 = b'\x04\x00\xff\xe8I\xfd\x9f\xcep-N\x88\x12\xba\xe9\xa2\x1d\t\x17U'
-RESERVE_FUNDS_ADDRESS = b'#\xba\'\x03\xc52c\xe8\xd6\xe5"\xdc2 39\xdc\xd8\xee\xe9'
+RESERVE_FUNDS_ADDRESS = b'\xe2\xacd\x1ep)\x1f\xe3V\x88\xdbG\x19\xe6X\\\xe7\xa5\xcfk'
+AFFILIATE_FUNDS_ADDRESS = b'\xaaJ\x12\xdf\xf8&U\xd5\xd1\x9e\xe6\xb2V\xe6\x1c\xa5\xe7*\xa10'
+SALE_FUNDS_ADDRESS = b'#\xba\'\x03\xc52c\xe8\xd6\xe5"\xdc2 39\xdc\xd8\xee\xe9'
 
 STORAGE_PREFIX_BALANCE = b'';
 STORAGE_PREFIX_CONFIG = b'c';
@@ -49,6 +51,10 @@ TOKEN_EMPLOYEES_AMOUNT_1 = 22500000 * 100000000 # 22.5m locked for 1 year
 TOKEN_EMPLOYEES_AMOUNT_2 = 22500000 * 100000000 # 22.5m locked for 2 year
 
 TOKEN_RESERVE_AMOUNT = 186375000 * 100000000 # 186.375m locked for 1 year
+
+TOKEN_AFFILIATE_AMOUNT = 13625000 * 100000000 # 13.625m for affiliate
+
+TOKEN_SALE_AMOUNT = 615000000 * 100000000 # 615m for sale
 
 
 def crowdsale_available_amount(ctx):

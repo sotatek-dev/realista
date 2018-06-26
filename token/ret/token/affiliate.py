@@ -21,16 +21,14 @@ def do_affiliate(ctx, sender_addr, amount):
 
     amount = amount * AFFILIATE_RATE / 1000
 
-    current_balance = get_balance(ctx, referrer_addr)
     affiliated_tokens = get_affiliated_tokens(ctx)
 
     new_affiliated_tokens = amount + affiliated_tokens
-    new_balance = amount + current_balance
 
     if new_affiliated_tokens > AFFILIATE_MAX_CAP:
         return False
 
-    set_balance(ctx, referrer_addr, new_balance)
+    add_balance(ctx, referrer_addr, amount)
     add_affiliated_tokens(ctx, amount)
     
     OnAffiliate(sender_addr, referrer_addr, amount)
