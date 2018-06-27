@@ -49,10 +49,7 @@ def Main(operation, args):
         # Otherwise, we need to lookup the assets and determine
         # If attachments of assets is ok
         attachments = get_asset_attachments()
-        sender_addr     = attachments[1]
-        sent_amount_neo = attachments[2]
-        now = GetTime()
-        exchangeables = get_exchangeable(ctx, sender_addr, sent_amount_neo, now)
+        exchangeables = get_exchangeable(ctx, attachments[1], attachments[2], GetTime())
         return exchangeables[0] > 0
 
     elif trigger == Application():
@@ -77,9 +74,6 @@ def Main(operation, args):
 
         elif operation == 'kyc_status':
             return kyc_status(ctx, args)
-
-        elif operation == 'available_tokens':
-            return crowdsale_available_amount(ctx)
 
         elif operation == 'get_attachments':
             return get_asset_attachments()
@@ -117,6 +111,31 @@ def Main(operation, args):
 
             return set_referrer(ctx, args)
 
+        elif operation == 'get_minted_tokens':
+            if len(args) == 1:
+                state = args[0]
+                if state == IS_WHITELIST_SALE:
+                    return get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_WHITELIST)
+                if state == IS_PRESALE:
+                    return get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_PRESALE)
+                if state == IS_CROWDSALE:
+                    return get_minted_tokens(ctx, STORAGE_PREFIX_PURCHASED_CROWDSALE)
+                return 0
+            return 0
+
+        elif operation == 'get_contributed_neo':
+            if len(args) == 2:
+                state = args[0]
+                address = args[1]
+                if state == IS_WHITELIST_SALE:
+                    return get_contributed_neo(ctx, address, STORAGE_PREFIX_PURCHASED_WHITELIST)
+                if state == IS_PRESALE:
+                    return get_contributed_neo(ctx, address, STORAGE_PREFIX_PURCHASED_PRESALE)
+                if state == IS_CROWDSALE:
+                    return get_contributed_neo(ctx, address, STORAGE_PREFIX_PURCHASED_CROWDSALE)
+                return 0
+            return 0
+
         elif operation == 'get_affiliated_tokens':
             return get_affiliated_tokens(ctx)
 
@@ -148,8 +167,6 @@ def deploy():
         return False
 
     if not Get(ctx, 'initialized'):
-        now = GetTime()
-
         # do deploy logic
         Put(ctx, 'initialized', 1)
         Put(ctx, TOKEN_OWNER, TOKEN_INITIAL_AMOUNT)
@@ -161,11 +178,20 @@ def deploy():
         Put(ctx, AFFILIATE_FUNDS_ADDRESS, TOKEN_AFFILIATE_AMOUNT)
         Put(ctx, SALE_FUNDS_ADDRESS, TOKEN_SALE_AMOUNT)
 
-        set_locked_until(ctx, ECOSYSTEM_RESERVE_ADDRESS, now + 3 * 30 * 86400)
-        set_locked_until(ctx, ADVISOR_FUNDS_ADDRESS, now + 3 * 30 * 86400)
-        set_locked_until(ctx, EMPLOYEE_FUNDS_ADDRESS1, now + 365 * 86400)
-        set_locked_until(ctx, EMPLOYEE_FUNDS_ADDRESS2, now + 2 * 365 * 86400)
-        set_locked_until(ctx, RESERVE_FUNDS_ADDRESS, now + 12 * 30 * 86400)
+        log = set_locked(ctx)
+
         return add_to_circulation(ctx, TOKEN_TOTAL_SUPPLY)
 
     return False
+
+
+def set_locked(ctx):
+    """
+        This function is for prevent Op Not Converted: EXTENDED_ARG
+    """
+    now = GetTime()
+    set_locked_until(ctx, ECOSYSTEM_RESERVE_ADDRESS, now + 3 * 30 * 86400)
+    set_locked_until(ctx, ADVISOR_FUNDS_ADDRESS, now + 3 * 30 * 86400)
+    set_locked_until(ctx, EMPLOYEE_FUNDS_ADDRESS1, now + 365 * 86400)
+    set_locked_until(ctx, EMPLOYEE_FUNDS_ADDRESS2, now + 2 * 365 * 86400)
+    set_locked_until(ctx, RESERVE_FUNDS_ADDRESS, now + 365 * 86400)

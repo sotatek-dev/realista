@@ -315,7 +315,7 @@ class TestContract(BoaFixtureTest):
         # now the total circulation should be bigger
         tx, results, total_ops, engine = TestBuild(out, ['totalSupply', '[]'], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), TOKEN_TOTAL_SUPPLY)\
+        self.assertEqual(results[0].GetBigInteger(), TOKEN_TOTAL_SUPPLY)
 
     def test_ICOTemplate_6_approval(self):
 

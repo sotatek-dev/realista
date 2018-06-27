@@ -93,8 +93,7 @@ def get_exchangeable(ctx, sender_addr, sent_amount_neo, sending_time):
     '''
         Check sale tokens
     '''
-    current_sale_tokens = get_balance(ctx, SALE_FUNDS_ADDRESS)
-    if current_sale_tokens < exchanged_tokens:
+    if get_balance(ctx, SALE_FUNDS_ADDRESS) < exchanged_tokens:
         return [0, 0, state]
 
     '''
@@ -164,7 +163,6 @@ def get_amount_requested(ctx, address, neo_amount, state, sending_time):
     '''
     if state == IS_CROWDSALE:
         CROWDSALE_OPEN = get_config(ctx, 'CROWDSALE_OPEN')
-        CROWDSALE_CLOSE = CROWDSALE_OPEN + 86400 * 4 * 7
         CROWDSALE_WEEK1_RATE = get_config(ctx, 'CROWDSALE_WEEK1_RATE')
         CROWDSALE_WEEK2_RATE = get_config(ctx, 'CROWDSALE_WEEK2_RATE')
         CROWDSALE_WEEK3_RATE = get_config(ctx, 'CROWDSALE_WEEK3_RATE')
@@ -179,7 +177,7 @@ def get_amount_requested(ctx, address, neo_amount, state, sending_time):
             rate = CROWDSALE_WEEK2_RATE
         elif sending_time < CROWDSALE_OPEN + 86400 * 7 * 3:
             rate = CROWDSALE_WEEK3_RATE
-        elif sending_time <= CROWDSALE_CLOSE:
+        elif sending_time <= CROWDSALE_OPEN + 86400 * 7 * 4:
             rate = CROWDSALE_WEEK4_RATE
         else:
             rate = 1
