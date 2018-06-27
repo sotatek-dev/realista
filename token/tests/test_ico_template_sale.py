@@ -220,8 +220,6 @@ class TestContract(BoaFixtureTest):
         output = Compiler.instance().load('%s/ico_template.py' % TestContract.dirname).default
         out = output.write()
 
-        TestContract.dispatched_events = []
-
         #  reconfig to presale
         tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_OPEN', 0])], self.GetWallet1(), '0705', '05')
         tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_CLOSE', 0])], self.GetWallet1(), '0705', '05')
@@ -263,6 +261,10 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 10 * 100000000)
 
+        tx, results, total_ops, engine = TestBuild(out, ['get_contributed_neo', parse_param([IS_CROWDSALE, self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBigInteger(), 0)
+
         # circulation
         tx, results, total_ops, engine = TestBuild(out, ['circulation', parse_param([])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
@@ -298,6 +300,50 @@ class TestContract(BoaFixtureTest):
         tx, results, total_ops, engine = TestBuild(out, ['get_affiliated_tokens', parse_param([])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 10 * self.PRESALE_RATE * 25 / 1000)
+
+        #  revert config
+        self.test_ICOTemplate_1()
+
+    def test_ICOTemplate_5_sale_and_kyc(self):
+
+        output = Compiler.instance().load('%s/ico_template.py' % TestContract.dirname).default
+        out = output.write()
+
+        # kyc registered in whitelistsale, ok
+        tx, results, total_ops, engine = TestBuild(out, ['mintTokens', '[]', '--attach-neo=10'], self.GetWallet3(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        # reject kyc
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_reject', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBigInteger(), 1)
+
+        # kyc rejected, fail
+        tx, results, total_ops, engine = TestBuild(out, ['mintTokens', '[]', '--attach-neo=10'], self.GetWallet3(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), False)
+
+        #  reconfig to presale
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_OPEN', 0])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_CLOSE', 0])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_OPEN', self.now_in_test])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_CLOSE', self.now_in_test + 86400])], self.GetWallet1(), '0705', '05')
+
+        # kyc rejected, fail
+        tx, results, total_ops, engine = TestBuild(out, ['mintTokens', '[]', '--attach-neo=10'], self.GetWallet3(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), False)
+
+        #  reconfig to presale
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_OPEN', 0])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_CLOSE', 0])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_OPEN', self.now_in_test])], self.GetWallet1(), '0705', '05')
+
+        # crowdsale not require kyc, success
+        tx, results, total_ops, engine = TestBuild(out, ['mintTokens', '[]', '--attach-neo=10'], self.GetWallet3(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
 
         #  revert config
         self.test_ICOTemplate_1()
