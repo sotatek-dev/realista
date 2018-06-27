@@ -78,46 +78,6 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), TOKEN_DECIMALS)
 
-        tx, results, total_ops, engine = TestBuild(out, ['totalSupply', '[]'], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), 0)
-
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_OPEN', self.now_in_test])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_CLOSE', self.now_in_test + 86400 * 3])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_RATE', self.WHITELIST_SALE_RATE])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_UPPER_RATE', self.WHITELIST_SALE_UPPER_RATE])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_RATE', self.PRESALE_RATE])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_WEEK1_RATE', self.CROWDSALE_WEEK1_RATE])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_WEEK2_RATE', self.CROWDSALE_WEEK2_RATE])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_WEEK3_RATE', self.CROWDSALE_WEEK3_RATE])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
-        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_WEEK4_RATE', self.CROWDSALE_WEEK4_RATE])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
         tx, results, total_ops, engine = TestBuild(out, ['nonexistentmethod', '[]'], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetString(), 'unknown operation')
@@ -248,6 +208,21 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
+        # reject 2 addresses at once
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_reject', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBigInteger(), 2)
+
+        # now check reg status
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_status', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet3(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), False)
+
+        # register 2 addresses at once (revert)
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_register', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBigInteger(), 2)
+
     def test_ICOTemplate_4_attachments(self):
 
         output = Compiler.instance().load('%s/ico_template.py' % TestContract.dirname).default
@@ -283,40 +258,6 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(attachments[2].GetBigInteger(), Fixed8.FromDecimal(3).value)
         self.assertEqual(attachments[3].GetBigInteger(), Fixed8.FromDecimal(3.12).value)
 
-    def test_ICOTemplate_5_mint(self):
-
-        output = Compiler.instance().load('%s/ico_template.py' % TestContract.dirname).default
-        out = output.write()
-
-        # register an address
-        tx, results, total_ops, engine = TestBuild(out, ['kyc_register', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), 1)
-
-        TestContract.dispatched_events = []
-
-        # test mint tokens, this should return true
-        tx, results, total_ops, engine = TestBuild(out, ['mintTokens', '[]', '--attach-neo=10'], self.GetWallet3(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBoolean(), True)
-
-        # it should dispatch an event
-        self.assertEqual(len(TestContract.dispatched_events), 1)
-        evt = TestContract.dispatched_events[0]
-        self.assertIsInstance(evt, NotifyEvent)
-        self.assertEqual(evt.amount, 10 * self.WHITELIST_SALE_RATE)
-        self.assertEqual(evt.addr_to, self.wallet_3_script_hash)
-
-        # now the minter should have a balance
-        tx, results, total_ops, engine = TestBuild(out, ['balanceOf', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), 10 * self.WHITELIST_SALE_RATE)
-
-        # now the total circulation should be bigger
-        tx, results, total_ops, engine = TestBuild(out, ['totalSupply', '[]'], self.GetWallet1(), '0705', '05')
-        self.assertEqual(len(results), 1)
-        self.assertEqual(results[0].GetBigInteger(), TOKEN_TOTAL_SUPPLY)
-
     def test_ICOTemplate_6_approval(self):
 
         output = Compiler.instance().load('%s/ico_template.py' % TestContract.dirname).default
@@ -345,7 +286,7 @@ class TestContract(BoaFixtureTest):
         TestContract.dispatched_events = []
 
         # approve should work
-        tx, results, total_ops, engine = TestBuild(out, ['approve', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data, 1234])], self.GetWallet3(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['approve', parse_param([self.wallet_1_script_hash.Data, self.wallet_2_script_hash.Data, 1234])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
@@ -357,21 +298,21 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(evt.amount, 1234)
 
         # check allowance
-        tx, results, total_ops, engine = TestBuild(out, ['allowance', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet2(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['allowance', parse_param([self.wallet_1_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet2(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 1234)
 
         # approve should not be additive, it should overwrite previous approvals
-        tx, results, total_ops, engine = TestBuild(out, ['approve', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data, 133234])], self.GetWallet3(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['approve', parse_param([self.wallet_1_script_hash.Data, self.wallet_2_script_hash.Data, 133234])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
-        tx, results, total_ops, engine = TestBuild(out, ['allowance', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet2(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['allowance', parse_param([self.wallet_1_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet2(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 133234)
 
         # now you can transfer from
-        tx, results, total_ops, engine = TestBuild(out, ['transferFrom', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data, 10000])], self.GetWallet2(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['transferFrom', parse_param([self.wallet_1_script_hash.Data, self.wallet_2_script_hash.Data, 10000])], self.GetWallet2(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
@@ -383,16 +324,16 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(results[0].GetBigInteger(), 10000 + 2400000001)
 
         # now the allowance should be less
-        tx, results, total_ops, engine = TestBuild(out, ['allowance', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet2(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['allowance', parse_param([self.wallet_1_script_hash.Data, self.wallet_2_script_hash.Data])], self.GetWallet2(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 133234 - 10000)
 
         # try to transfer too much, even with approval
-        tx, results, total_ops, engine = TestBuild(out, ['transferFrom', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data, 14440000])], self.GetWallet2(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['transferFrom', parse_param([self.wallet_1_script_hash.Data, self.wallet_2_script_hash.Data, 14440000])], self.GetWallet2(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), False)
 
         # cant approve negative amounts
-        tx, results, total_ops, engine = TestBuild(out, ['approve', parse_param([self.wallet_3_script_hash.Data, self.wallet_2_script_hash.Data, -1000])], self.GetWallet3(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['approve', parse_param([self.wallet_1_script_hash.Data, self.wallet_2_script_hash.Data, -1000])], self.GetWallet3(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), False)

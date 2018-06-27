@@ -150,6 +150,14 @@ def Main(operation, args):
             log = debug_log('Invalid arguments')
             return 0
 
+        elif operation == 'kyc_reject':
+            return kyc_reject(ctx, args)
+
+        elif operation == 'get_locked_until':
+            if len(args) == 1:
+                return get_locked_until(ctx, args[0])
+            return 0
+
         return 'unknown operation'
 
     return False

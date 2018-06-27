@@ -21,6 +21,12 @@ def do_affiliate(ctx, sender_addr, amount):
 
     amount = amount * AFFILIATE_RATE / 1000
 
+    '''
+        Check affiliate tokens
+    '''
+    if get_balance(ctx, AFFILIATE_FUNDS_ADDRESS) < amount:
+        return False
+
     affiliated_tokens = get_affiliated_tokens(ctx)
 
     new_affiliated_tokens = amount + affiliated_tokens
@@ -29,6 +35,7 @@ def do_affiliate(ctx, sender_addr, amount):
         return False
 
     add_balance(ctx, referrer_addr, amount)
+    sub_balance(ctx, AFFILIATE_FUNDS_ADDRESS, amount)
     add_affiliated_tokens(ctx, amount)
     
     OnAffiliate(sender_addr, referrer_addr, amount)
