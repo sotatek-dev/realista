@@ -18,7 +18,7 @@ class TokenInfo extends React.Component {
       tokenName: '',
       tokenSymbol: '',
       totalSupply: '',
-      circulation: '',
+      // circulation: '',
     };
   }
 
@@ -43,7 +43,7 @@ class TokenInfo extends React.Component {
           tokenName: tokenInfo.name,
           tokenSymbol: tokenInfo.symbol,
           totalSupply: tokenInfo.totalSupply,
-          circulation: tokenInfo.circulation
+          // circulation: tokenInfo.circulation
         });
       })
       .catch(err => {
@@ -92,10 +92,10 @@ class TokenInfo extends React.Component {
           <Col xs={4}>
             <FormControl type="text" value={this.state.totalSupply} readOnly />
           </Col>
-          <Col xs={2}><ControlLabel>Circulation</ControlLabel></Col>
+          {/* <Col xs={2}><ControlLabel>Circulation</ControlLabel></Col>
           <Col xs={4}>
             <FormControl type="text" value={this.state.circulation} readOnly />
-          </Col>
+          </Col> */}
         </Row>
       </Grid>
     )

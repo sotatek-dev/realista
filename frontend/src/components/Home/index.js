@@ -7,7 +7,7 @@ class Home extends React.Component {
     super(props);
     this.state = {
       network: '',
-      scriptHash: '13c1410cec20128a3ef53e626a113eeff477f8ce',
+      scriptHash: '31ba790c45af1c7d4d0d3f8af847007a85399f72',
     };
   }
 

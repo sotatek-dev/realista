@@ -63,20 +63,20 @@ const getTokenInfo = (network, scriptHash) => {
   sb.emitAppCall(scriptHash, 'name')
     .emitAppCall(scriptHash, 'symbol')
     .emitAppCall(scriptHash, 'decimals')
-    .emitAppCall(scriptHash, 'circulation')
-    .emitAppCall(scriptHash, 'totalSupply');
+    .emitAppCall(scriptHash, 'totalSupply')
+    // .emitAppCall(scriptHash, 'circulation');
 
   return Query
     .invokeScript(sb.str, false)
-    .parseWith(VMZip(hexstring2str, hexstring2str, parseDecimals, parseHexNumber, parseHexNumber))
+    .parseWith(VMZip(hexstring2str, hexstring2str, parseDecimals, parseHexNumber))
     .execute(rpcUrl)
     .then((res) => {
       return {
         name: res[0],
         symbol: res[1],
         decimals: res[2],
-        circulation: res[3] / Math.pow(10, res[2]),
-        totalSupply: res[4] / Math.pow(10, res[2])
+        totalSupply: res[3] / Math.pow(10, res[2]),
+        // circulation: res[4] / Math.pow(10, res[2]),
       }
     })
     .catch((err) => {
@@ -134,7 +134,7 @@ const setConfigValue = (network, scriptHash, wif, configName, configValue) => {
   const sb = new ScriptBuilder();
   const rpcUrl = _.sample(networkConfig[network].rpcEndpoints);
   const hexedConfigName = ab2hexstring(str2ab(configName));
-  const hexedConfigValue = utils.num2hexstring(parseInt(configValue));
+  const hexedConfigValue = utils.num2hexstring(parseInt(configValue), 8, true); // little endian
   const account = new Account(wif);
 
   const script = Neon.create.script({

@@ -12,8 +12,8 @@ class TokenConfigsList extends React.Component {
     super(props);
 
     this.state = {
-      WHITELIST_SALE_BEGIN: '',
-      WHITELIST_SALE_END: '',
+      WHITELIST_SALE_OPEN: '',
+      WHITELIST_SALE_CLOSE: '',
     };
   }
 
@@ -36,12 +36,12 @@ class TokenConfigsList extends React.Component {
       <Grid>
 
         <TokenConfigItem
-          configName={'WHITELIST_SALE_BEGIN'}
+          configName={'WHITELIST_SALE_OPEN'}
           configValueFormat={this.formatTime}
           network={this.props.network}
           scriptHash={this.props.scriptHash} />
         <TokenConfigItem
-          configName={'WHITELIST_SALE_END'}
+          configName={'WHITELIST_SALE_CLOSE'}
           configValueFormat={this.formatTime}
           network={this.props.network}
           scriptHash={this.props.scriptHash} />
