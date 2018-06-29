@@ -54,6 +54,16 @@ const parseHexNumber = (hex) => {
   return parseInt(reverseHex(hex), 16);
 }
 
+const parseBoolean = (hex) => {
+  if (!hex) {
+    return false;
+  }
+
+  logger.info(hex)
+
+  return parseInt(reverseHex(hex), 16) > 0;
+}
+
 const parseTokenInfoAndBalance = VMZip(hexstring2str, hexstring2str, parseDecimals, parseHexNumber, parseHexNumber)
 
 const getTokenInfo = (network, scriptHash) => {
@@ -194,10 +204,83 @@ const doTransfer = (network, scriptHash, fromWif, toAddress, amount) => {
   // Implement me
 }
 
+const getKycStatus = (network, scriptHash, address) => {
+  const sb = new ScriptBuilder();
+  const rpcUrl = _.sample(networkConfig[network].rpcEndpoints);
+  const addrScriptHash = reverseHex(getScriptHashFromAddress(address));
+
+  sb.emitAppCall(scriptHash, 'kyc_status', [addrScriptHash]);
+
+  return Query
+    .invokeScript(sb.str, false)
+    .parseWith(VMZip(parseBoolean))
+    .execute(rpcUrl)
+    .then((res) => {
+      return {
+        status: res[0]
+      }
+    })
+    .catch((err) => {
+      logger.error(`nep5.getKycStatus failed with error: ${err.message}`);
+      throw err;
+    });
+}
+
+const KycReject = (network, scriptHash, wif, address) => {
+  const sb = new ScriptBuilder();
+  const rpcUrl = _.sample(networkConfig[network].rpcEndpoints);
+  const addrScriptHash = reverseHex(getScriptHashFromAddress(address));
+  const account = new Account(wif);
+
+  const script = Neon.create.script({
+    scriptHash: scriptHash,
+    operation: 'kyc_reject',
+    args: [addrScriptHash]
+  });
+
+  return Neon.doInvoke({
+    net: network,
+    script,
+    address: account.address,
+    privateKey: account.privateKey,
+    gas: 0
+  }).then(res => {
+    logger.fatal(res.response);
+    return res.response;
+  });
+}
+
+const KycRegister = (network, scriptHash, wif, address) => {
+  const sb = new ScriptBuilder();
+  const rpcUrl = _.sample(networkConfig[network].rpcEndpoints);
+  const addrScriptHash = reverseHex(getScriptHashFromAddress(address));
+  const account = new Account(wif);
+
+  const script = Neon.create.script({
+    scriptHash: scriptHash,
+    operation: 'kyc_register',
+    args: [addrScriptHash]
+  });
+
+  return Neon.doInvoke({
+    net: network,
+    script,
+    address: account.address,
+    privateKey: account.privateKey,
+    gas: 0
+  }).then(res => {
+    logger.fatal(res.response);
+    return res.response;
+  });
+}
+
 module.exports = {
   getTokenInfo,
   getBalance,
   doTransfer,
   getConfigValue,
   setConfigValue,
+  getKycStatus,
+  KycRegister,
+  KycReject
 };

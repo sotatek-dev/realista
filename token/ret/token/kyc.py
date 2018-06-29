@@ -53,7 +53,7 @@ def kyc_reject(ctx, args):
             if len(address) == 20:
 
                 kyc_storage_key = concat(STORAGE_KEY_KYC, address)
-                Put(ctx, kyc_storage_key, False)
+                Delete(ctx, kyc_storage_key)
 
                 OnKYCReject(address)
                 ok_count += 1
