@@ -11,10 +11,11 @@ class UserItem extends React.Component {
     return (
       <Row style={{ marginBottom: '5px' }}>
         <Col xs={1}>{this.props.id}</Col>
-        <Col xs={3}>{this.props.fullName}</Col>
-        <Col xs={3}>{this.props.email}</Col>
-        <Col xs={3}>{this.props.neoAddress}</Col>
+        <Col xs={2}>{this.props.fullName}</Col>
+        <Col xs={2}>{this.props.email}</Col>
+        <Col xs={2}>{this.props.neoAddress}</Col>
         <Col xs={2}>{this.props.referralId}</Col>
+        <Col xs={3}>1</Col>
       </Row>
     )
   }

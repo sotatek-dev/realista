@@ -14,6 +14,10 @@ class UserRequest extends BaseRequest {
     return this.get('/refunds', params);
   }
 
+  getKycStatus (params = {}) {
+    return this.get('/kyc-status', params)
+  }
+
 }
 
 export default new UserRequest();

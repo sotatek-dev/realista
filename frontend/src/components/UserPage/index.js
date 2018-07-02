@@ -13,7 +13,9 @@ class UserPage extends Component {
     super(props);
 
     this.state = {
-      users: []
+      users: [],
+      network: 'PrivateNet',
+      scriptHash: 'd4c3af978aa357b1cb77d104d1ac1cde73397aab',
     };
   }
 
@@ -27,6 +29,18 @@ class UserPage extends Component {
       .catch(err => {
         console.error(err);
       })
+
+    UserRequest.getKycStatus({
+      network: this.state.network,
+      scriptHash: this.state.scriptHash,
+      address: 'AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y'
+    })
+      .then(response => {
+        console.log(response)
+      })
+      .catch(err => {
+        console.error(err);
+      })
   }
 
   render () {
@@ -36,10 +50,11 @@ class UserPage extends Component {
         <Grid>
           <Row style={{ marginBottom: '5px', fontWeight: 'bold' }}>
             <Col xs={1}>{'ID'}</Col>
-            <Col xs={3}>{'Full name'}</Col>
-            <Col xs={3}>{'Email'}</Col>
-            <Col xs={3}>{'NEO Address'}</Col>
+            <Col xs={2}>{'Full name'}</Col>
+            <Col xs={2}>{'Email'}</Col>
+            <Col xs={2}>{'NEO Address'}</Col>
             <Col xs={2}>{'Referral ID'}</Col>
+            <Col xs={3}>{'Status'}</Col>
           </Row>
           {this.state.users.map(user => (
             <UserItem

@@ -4,6 +4,7 @@ import {
 } from 'react-bootstrap';
 import moment from 'moment';
 import PropTypes from 'prop-types';
+import constants from '../../constants';
 
 import TokenConfigItem from './TokenConfigItem';
 
@@ -31,6 +32,11 @@ class TokenConfigsList extends React.Component {
     return moment.unix(parseInt(time, 10)).format();
   }
 
+  formatDecimals (value) {
+    const decimals = constants.nep5.DECIMALS
+    return value / Math.pow(10, decimals);
+  }
+
   render() {
     return (
       <Grid>
@@ -45,7 +51,56 @@ class TokenConfigsList extends React.Component {
           configValueFormat={this.formatTime}
           network={this.props.network}
           scriptHash={this.props.scriptHash} />
-
+        <TokenConfigItem
+          configName={'WHITELIST_SALE_RATE'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'WHITELIST_SALE_UPPER_RATE'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'PRESALE_OPEN'}
+          configValueFormat={this.formatTime}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'PRESALE_CLOSE'}
+          configValueFormat={this.formatTime}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'PRESALE_RATE'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'CROWDSALE_OPEN'}
+          configValueFormat={this.formatTime}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'CROWDSALE_WEEK1_RATE'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'CROWDSALE_WEEK2_RATE'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'CROWDSALE_WEEK3_RATE'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'CROWDSALE_WEEK4_RATE'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
       </Grid>
     )
   }
