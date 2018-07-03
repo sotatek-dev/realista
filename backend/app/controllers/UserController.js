@@ -76,13 +76,13 @@ module.exports = AuthController.extends({
         return res.ok(ErrorFactory.notFound(`User not found: ${field}=${email}`));
       }
 
-      // if (user.role !== Const.ROLE.ADMIN) {
-      //   logger.error(`Invalid role for ${field}=${email}`);
-      //   return res.ok(ErrorFactory.badRequest('Wrong role.'));
-      // }
-    });
+      if (user.role !== Const.ROLE.ADMIN) {
+        logger.error(`Invalid role for ${field}=${email}`);
+        return res.ok(ErrorFactory.badRequest('Wrong role.'));
+      }
 
-    return $super(req, res);
+      return $super(req, res);
+    });
   },
 
   generateAccessToken: function ($super, user, expiredTime) {

@@ -45,7 +45,11 @@ class BaseRequest {
   }
 
   _getAuthToken () {
-    return 'Basic YWRtaW46MQ==';
+    const user = JSON.parse(localStorage.getItem('user'));
+    if(user && user.token) {
+      return `Bearer ${user.token}`;
+    }
+    return '';
   }
 
 }

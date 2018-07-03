@@ -7,9 +7,11 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import Home from './components/Home';
 import RegisterPage from './components/RegisterPage';
+import LoginPage from './components/LoginPage';
 import UserPage from './components/UserPage';
 import ContributionPage from './components/ContributionPage';
 import RefundPage from './components/RefundPage';
+import { PrivateRoute, Logout } from './components/HelperComponent';
 
 const TAB_IDS = {
   HOME              : 1,
@@ -17,6 +19,7 @@ const TAB_IDS = {
   CONTRIBUTION_LIST : 3,
   REFUND_LIST       : 4,
   REGISTER          : 5,
+  LOGOUT            : 6,
 };
 
 class App extends Component {
@@ -63,19 +66,27 @@ class App extends Component {
                   Register
                 </NavItem>
               </LinkContainer>
+              <LinkContainer to="/logout">
+                <NavItem eventKey={TAB_IDS.LOGOUT}>
+                  Logout
+                </NavItem>
+              </LinkContainer>
             </Nav>
 
-            <Route exact path="/" component={Home}/>
-            <Route path="/home" component={Home}/>
-            <Route path="/users" component={UserPage}/>
-            <Route path="/contributions" component={ContributionPage}/>
-            <Route path="/refunds" component={RefundPage}/>
+            <PrivateRoute exact path="/" component={Home}/>
+            <PrivateRoute path="/home" component={Home}/>
+            <PrivateRoute path="/users" component={UserPage}/>
+            <PrivateRoute path="/contributions" component={ContributionPage}/>
+            <PrivateRoute path="/refunds" component={RefundPage}/>
             <Route path="/register" component={RegisterPage}/>
+            <Route path="/login" component={LoginPage}/>
+            <PrivateRoute path="/logout" component={Logout}/>
           </div>
         </Router>
       </div>
     );
   }
 }
+
 
 export default App;

@@ -10,6 +10,10 @@ class UserRequest extends BaseRequest {
     return this.post('/register', params);
   }
 
+  login (params = {}) {
+    return this.post('/login', params);
+  }
+
   getRefundList (params = {}) {
     return this.get('/refunds', params);
   }
