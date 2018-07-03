@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Row,
   Col,
+  Button
 } from 'react-bootstrap';
 
 import PropTypes from 'prop-types';
@@ -15,9 +16,18 @@ class UserItem extends React.Component {
         <Col xs={2}>{this.props.email}</Col>
         <Col xs={2}>{this.props.neoAddress}</Col>
         <Col xs={2}>{this.props.referralId}</Col>
-        <Col xs={3}>1</Col>
+        <Col xs={3}>
+          {this.button(this.props.kyc)}
+        </Col>
       </Row>
     )
+  }
+
+  button(kyc) {
+    if(!kyc) {
+      return (<Button bsStyle="success" onClick={() => this.props.kycRegister(this.props.neoAddress)}>KYC Register</Button>)
+    }
+    return (<Button bsStyle="danger" onClick={() => this.props.kycReject(this.props.neoAddress)}>KYC Reject</Button>)
   }
 }
 
@@ -28,6 +38,7 @@ UserItem.propTypes = {
   neoAddress: PropTypes.string.isRequired,
   referralId: PropTypes.string.isRequired,
   referrerId: PropTypes.string,
+  kyc: PropTypes.bool
 };
 
 export default UserItem;

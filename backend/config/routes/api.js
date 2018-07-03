@@ -9,6 +9,7 @@ module.exports = {
   },
   POST: {
     '/nep5/config'                : ['NEP5TokenController.setConfigValue', ['basicAuth']],
+    '/login'                      : ['UserController.login'],
     '/register'                   : ['UserController.register'],
     '/kyc-register'               : ['NEP5SaleController.KycRegister', ['basicAuth']],
     '/kyc-reject'                 : ['NEP5SaleController.KycReject', ['basicAuth']],

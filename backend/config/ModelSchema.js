@@ -20,5 +20,6 @@
      password: { type: 'string', length: 384 },
      full_name: { type: 'string', length: 135 },
      neo_address: { type: 'string', length: 300 },
+     role: { type: 'number', length: 11 },
      referral_id: { type: 'string', length: 30 },
      referrer_id: { type: 'string', length: 30 } } }

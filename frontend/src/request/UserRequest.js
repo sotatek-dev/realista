@@ -18,6 +18,14 @@ class UserRequest extends BaseRequest {
     return this.get('/kyc-status', params)
   }
 
+  kycRegister (params = {}) {
+    return this.post('/kyc-register', params)
+  }
+
+  kycReject (params = {}) {
+    return this.post('/kyc-reject', params)
+  }
+
 }
 
 export default new UserRequest();

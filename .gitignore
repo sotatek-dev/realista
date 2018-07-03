@@ -105,3 +105,4 @@ venv.bak/
 ico_template.debug.json
 
 .vscode
+token/fixtures/neo-privnet.wallet

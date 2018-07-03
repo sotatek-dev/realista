@@ -9,6 +9,7 @@ const seeds = [
     password: bcrypt.hashSync('1', bcrypt.genSaltSync(8)),
     full_name: 'Super User',
     neo_address: 'ITS_AN_INVALID_ADDRESS',
+    role: '1',
     referral_id: 'admin',
     created_at: now,
     updated_at: now,
