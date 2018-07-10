@@ -29,7 +29,7 @@ load_dotenv(os.path.abspath(os.path.join('.', '.env')))
 # settings.set_logfile("/tmp/logfile.log", max_bytes=1e7, backup_count=3)
 
 # Setup the smart contract instance
-smart_contract = SmartContract("d4c3af978aa357b1cb77d104d1ac1cde73397aab")
+smart_contract = SmartContract("fdb94040d3578817cc9293f95b8ddae75d87ac57")
 
 
 # Register an event handler for Runtime.Notify events of the smart contract.

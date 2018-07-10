@@ -16,7 +16,7 @@ class UserPage extends Component {
     this.state = {
       users: [],
       network: 'PrivateNet',
-      scriptHash: 'd4c3af978aa357b1cb77d104d1ac1cde73397aab',
+      scriptHash: 'fdb94040d3578817cc9293f95b8ddae75d87ac57',
     };
 
     this.kycRegister = this.kycRegister.bind(this)
