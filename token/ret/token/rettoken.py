@@ -12,7 +12,7 @@ TOKEN_DECIMALS = 8
 
 # This is the script hash of the address for the owner of the token
 # This can be found in ``neo-python`` with the walet open, use ``wallet`` command
-# TOKEN_OWNER = b'S\xefB\xc8\xdf!^\xbeZ|z\xe8\x01\xcb\xc3\xac/\xacI)' => for unittest
+# TOKEN_OWNER = b'S\xefB\xc8\xdf!^\xbeZ|z\xe8\x01\xcb\xc3\xac/\xacI)' # => for unittest
 TOKEN_OWNER = b'#\xba\'\x03\xc52c\xe8\xd6\xe5"\xdc2 39\xdc\xd8\xee\xe9' # => for privatenet
 ECOSYSTEM_RESERVE_ADDRESS = b'\xc4\xdc\xe1n\xee\xe9\x06\xa8\xe7[\xfe\x14\xac\x03\x12P\xe7\xaf\xf7n'
 ADVISOR_FUNDS_ADDRESS = b'\xdc\x00\xe3u\xce\xce\xf7\xfb\xe7\x8b\xe32\xbf4o\x9f\xc3\x1b\x9f\xaa'

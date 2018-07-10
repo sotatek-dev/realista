@@ -35,6 +35,9 @@ class TestContract(BoaFixtureTest):
     CROWDSALE_WEEK2_RATE = 3833 * 100000000
     CROWDSALE_WEEK3_RATE = 3666 * 100000000
     CROWDSALE_WEEK4_RATE = 3500 * 100000000
+    WHITELIST_SALE_PERSONAL_CAP = 500 * 100000000 # 500 NEO
+    PRESALE_PERSONAL_CAP = 250 * 100000000 # 250 NEO
+    CROWDSALE_PERSONAL_CAP = 500 * 100000000 # 500 NEO
 
     wallet = {
         'ECOSYSTEM_RESERVE_ADDRESS': UserWallet.Open('./fixtures/testwallet8.db3', to_aes_key('testwallet'))
@@ -92,6 +95,10 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_PERSONAL_CAP', self.WHITELIST_SALE_PERSONAL_CAP])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
         tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_OPEN', self.now_in_test + 86400 * 2])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
@@ -101,6 +108,10 @@ class TestContract(BoaFixtureTest):
         self.assertEqual(results[0].GetBoolean(), True)
 
         tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_RATE', self.PRESALE_RATE])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_PERSONAL_CAP', self.PRESALE_PERSONAL_CAP])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
 
@@ -127,6 +138,10 @@ class TestContract(BoaFixtureTest):
         tx, results, total_ops, engine = TestBuild(out, ['get_config', parse_param(['CROWDSALE_WEEK4_RATE'])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), self.CROWDSALE_WEEK4_RATE)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_PERSONAL_CAP', self.CROWDSALE_PERSONAL_CAP])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
 
     def test_ICOTemplate_2_exchangeable(self):
 
@@ -181,17 +196,17 @@ class TestContract(BoaFixtureTest):
         out = output.write()
 
         # check whitelist cap
-        tx, results, total_ops, engine = TestBuild(out, ['get_exchangeable_amount', parse_param([self.wallet_3_script_hash.Data, WHITELIST_SALE_PERSONAL_CAP + 1, self.now_in_test])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['get_exchangeable_amount', parse_param([self.wallet_3_script_hash.Data, self.WHITELIST_SALE_PERSONAL_CAP + 1, self.now_in_test])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 0)
 
         # check presale cap
-        tx, results, total_ops, engine = TestBuild(out, ['get_exchangeable_amount', parse_param([self.wallet_3_script_hash.Data, PRESALE_PERSONAL_CAP + 1, self.now_in_test + 86400 * 2])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['get_exchangeable_amount', parse_param([self.wallet_3_script_hash.Data, self.PRESALE_PERSONAL_CAP + 1, self.now_in_test + 86400 * 2])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 0)
 
         # check crowdsale cap
-        tx, results, total_ops, engine = TestBuild(out, ['get_exchangeable_amount', parse_param([self.wallet_3_script_hash.Data, CROWDSALE_PERSONAL_CAP + 1, self.now_in_test + 86400 * 4])], self.GetWallet1(), '0705', '05')
+        tx, results, total_ops, engine = TestBuild(out, ['get_exchangeable_amount', parse_param([self.wallet_3_script_hash.Data, self.CROWDSALE_PERSONAL_CAP + 1, self.now_in_test + 86400 * 4])], self.GetWallet1(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBigInteger(), 0)
 
@@ -344,6 +359,46 @@ class TestContract(BoaFixtureTest):
         tx, results, total_ops, engine = TestBuild(out, ['mintTokens', '[]', '--attach-neo=10'], self.GetWallet3(), '0705', '05')
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0].GetBoolean(), True)
+
+        # revert kyc
+        tx, results, total_ops, engine = TestBuild(out, ['kyc_register', parse_param([self.wallet_3_script_hash.Data])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBigInteger(), 1)
+
+        #  revert config
+        self.test_ICOTemplate_1()
+
+    def test_ICOTemplate_6_sale_cap(self):
+
+        output = Compiler.instance().load('%s/ico_template.py' % TestContract.dirname).default
+        out = output.write()
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['WHITELIST_SALE_PERSONAL_CAP', 2 * 70000000 * 100000000])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['PRESALE_PERSONAL_CAP', 2 * 65000000 * 100000000])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        tx, results, total_ops, engine = TestBuild(out, ['set_config', parse_param(['CROWDSALE_PERSONAL_CAP', 2 * 480000000 * 100000000])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBoolean(), True)
+
+        # check whitelist cap
+        tx, results, total_ops, engine = TestBuild(out, ['get_exchangeable_amount', parse_param([self.wallet_3_script_hash.Data, 70000000 * 100000000 / self.WHITELIST_SALE_RATE * 100000000, self.now_in_test])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBigInteger(), 0)
+
+        # # check presale cap
+        tx, results, total_ops, engine = TestBuild(out, ['get_exchangeable_amount', parse_param([self.wallet_3_script_hash.Data, 65000000 * 100000000 / self.PRESALE_RATE * 100000000, self.now_in_test + 86400 * 2])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBigInteger(), 0)
+
+        # # check crowdsale cap
+        tx, results, total_ops, engine = TestBuild(out, ['get_exchangeable_amount', parse_param([self.wallet_3_script_hash.Data, 480000000 * 100000000 / self.CROWDSALE_WEEK1_RATE * 100000000, self.now_in_test + 86400 * 4])], self.GetWallet1(), '0705', '05')
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0].GetBigInteger(), 0)
 
         #  revert config
         self.test_ICOTemplate_1()

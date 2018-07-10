@@ -6,7 +6,7 @@ module.exports = BaseController.extends({
   classname: 'AppController',
 
   helloWorld: function (req, res) {
-    res.send('OK');
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
   }
 
 });
