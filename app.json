@@ -2,8 +2,9 @@
   "apps": [
     {
       "name": "realista",
-      "script": "./server.js",
+      "script": "server.js",
       "watch": false,
+      "cwd": "./backend",
       "env": {
         "PORT": 9011
       }
