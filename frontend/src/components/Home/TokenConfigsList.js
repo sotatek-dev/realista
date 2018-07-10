@@ -62,6 +62,11 @@ class TokenConfigsList extends React.Component {
           network={this.props.network}
           scriptHash={this.props.scriptHash} />
         <TokenConfigItem
+          configName={'WHITELIST_SALE_PERSONAL_CAP'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
           configName={'PRESALE_OPEN'}
           configValueFormat={this.formatTime}
           network={this.props.network}
@@ -73,6 +78,11 @@ class TokenConfigsList extends React.Component {
           scriptHash={this.props.scriptHash} />
         <TokenConfigItem
           configName={'PRESALE_RATE'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'PRESALE_PERSONAL_CAP'}
           configValueFormat={this.formatDecimals}
           network={this.props.network}
           scriptHash={this.props.scriptHash} />
@@ -98,6 +108,11 @@ class TokenConfigsList extends React.Component {
           scriptHash={this.props.scriptHash} />
         <TokenConfigItem
           configName={'CROWDSALE_WEEK4_RATE'}
+          configValueFormat={this.formatDecimals}
+          network={this.props.network}
+          scriptHash={this.props.scriptHash} />
+        <TokenConfigItem
+          configName={'CROWDSALE_PERSONAL_CAP'}
           configValueFormat={this.formatDecimals}
           network={this.props.network}
           scriptHash={this.props.scriptHash} />
