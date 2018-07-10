@@ -1,7 +1,7 @@
 {
   "name": "PrivateNet",
-  "rpcEndpoints": ["http://192.168.1.203:30334"],
-  "neoscan": "http://192.168.1.203:4000/api/main_net",
+  "rpcEndpoints": ["http://neo-privnet:30334"],
+  "neoscan": "http://neo-privnet:4000/api/main_net",
   "averageBlockTime": 15000,
   "requiredConfirmation": 3,
   "tokens": [
