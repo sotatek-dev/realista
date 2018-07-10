@@ -1,6 +1,6 @@
 module.exports = {
   GET: {
-    '/'                                               : ['AppController.helloWorld'],
+    '*'                                               : ['AppController.helloWorld'],
   },
   POST: {
     // Implement me.

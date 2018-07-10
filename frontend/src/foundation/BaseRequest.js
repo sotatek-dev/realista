@@ -15,7 +15,11 @@ class BaseRequest {
   }
 
   _doRequest (method, url, paramsConfig) {
-    url = `http://localhost:8001/api${url}`;
+    if(process.env.NODE_ENV === 'production') {
+      url = `/api${url}`
+    } else {
+      url = `http://localhost:8001/api${url}`;
+    }
 
     const config = _.assign({
       method,
