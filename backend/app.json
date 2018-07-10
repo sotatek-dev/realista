@@ -2,7 +2,7 @@
   "apps": [
     {
       "name": "realista",
-      "script": "./backend/server.js",
+      "script": "./server.js",
       "watch": false,
       "env": {
         "PORT": 9011
